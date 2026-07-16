@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>単語帳クイズ</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1B2430">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="単語クイズ">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-soft:#2A3444;
+    --paper:#F7F5F0;
+    --paper-dim:#EDEAE2;
+    --brass:#B8935F;
+    --brass-deep:#9C7A47;
+    --red:#C0524A;
+    --green:#5E8C6A;
+    --slate:#8B93A1;
+    --line:rgba(247,245,240,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter','Hiragino Sans','Yu Gothic',sans-serif;
+    min-height:100vh;
+    padding-bottom:76px;
+  }
+  .stage{
+    width:100%;
+    max-width:640px;
+    margin:0 auto;
+    padding:24px 16px 16px;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  h1{
+    font-family:'Georgia','Hiragino Mincho ProN',serif;
+    font-size:24px;
+    font-weight:400;
+    margin:0 0 4px 0;
+  }
+  h2{
+    font-family:'Georgia','Hiragino Mincho ProN',serif;
+    font-size:19px;
+    font-weight:400;
+    margin:0 0 14px 0;
+  }
+  .sub{
+    color:var(--slate);
+    font-size:13px;
+    margin-bottom:20px;
+    line-height:1.6;
+  }
+  .card{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:2px;
+    padding:24px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 20px 40px -20px rgba(0,0,0,0.5);
+  }
+  textarea{
+    width:100%;
+    min-height:140px;
+    resize:vertical;
+    border:1px solid var(--paper-dim);
+    background:#fff;
+    color:var(--ink);
+    font-family:'Menlo','Consolas',monospace;
+    font-size:13px;
+    line-height:1.7;
+    padding:14px;
+    border-radius:2px;
+    outline:none;
+  }
+  textarea:focus{border-color:var(--brass);}
+  input[type=text], input[type=password]{
+    width:100%;
+    border:1px solid var(--paper-dim);
+    background:#fff;
+    color:var(--ink);
+    font-size:14px;
+    padding:11px 12px;
+    border-radius:2px;
+    outline:none;
+    font-family:inherit;
+  }
+  input[type=text]:focus, input[type=password]:focus{border-color:var(--brass);}
+  .field-label{
+    font-size:11px;
+    letter-spacing:0.06em;
+    color:#6B7280;
+    text-transform:uppercase;
+    margin-bottom:7px;
+    font-weight:600;
+  }
+  .hint{
+    font-size:12px;
+    color:#8B93A1;
+    margin-top:9px;
+    line-height:1.6;
+  }
+  .row{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; align-items:center;}
+  .toggle{display:flex; border:1px solid var(--paper-dim); border-radius:2px; overflow:hidden;}
+  .toggle button{border:none; background:#fff; color:#6B7280; padding:9px 13px; font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .toggle button.active{background:var(--ink); color:var(--paper);}
+  .btn{appearance:none; border:none; border-radius:2px; padding:12px 20px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn-primary{background:var(--brass); color:var(--ink);}
+  .btn-primary:hover{background:var(--brass-deep);}
+  .btn-primary:disabled{background:#D8CFC0; cursor:not-allowed; color:#9a9a9a;}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid #C7BEA9;}
+  .btn-ghost:hover{border-color:var(--brass-deep); color:var(--brass-deep); background:rgba(184,147,95,0.08);}
+  .btn-sm{padding:7px 12px; font-size:12.5px;}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid rgba(192,82,74,0.4);}
+  .btn-danger:hover{background:rgba(192,82,74,0.08);}
+  .error{color:var(--red); font-size:13px; margin-top:9px;}
+  .save-msg{font-size:13px; color:var(--brass-deep); margin-top:9px;}
+  .hidden{display:none !important;}
+
+  /* Tab bar */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0;
+    background:var(--ink-soft);
+    border-top:1px solid var(--line);
+    display:flex;
+    z-index:50;
+  }
+  .tabbar button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--slate);
+    font-family:inherit;
+    font-size:11px;
+    padding:10px 4px 12px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .tabbar button .ticon{font-size:17px; line-height:1;}
+  .tabbar button.active{color:var(--brass);}
+
+  /* Word list */
+  .search-row{margin-bottom:14px;}
+  .word-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 0;
+    border-bottom:1px solid var(--paper-dim);
+  }
+  .word-row:last-child{border-bottom:none;}
+  .word-main{flex:1; min-width:0;}
+  .word-main .w{font-weight:700; font-size:14.5px;}
+  .word-main .m{color:#6B7280; font-size:12.5px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .box-badge{
+    font-size:10px;
+    font-weight:700;
+    padding:3px 7px;
+    border-radius:20px;
+    background:var(--paper-dim);
+    color:#6B7280;
+    flex-shrink:0;
+  }
+  .box-badge.b1{background:#F5DDDA; color:#9A3E36;}
+  .box-badge.b2{background:#F7E6D2; color:#9C6B2A;}
+  .box-badge.b3{background:#F2EBD3; color:#8A7A2C;}
+  .box-badge.b4{background:#DEE9DD; color:#3E6B47;}
+  .box-badge.b5{background:#D6E6DE; color:#2C6B4C;}
+  .word-actions{display:flex; gap:6px; flex-shrink:0;}
+  .icon-btn{
+    background:none; border:none; cursor:pointer; color:#9C9484;
+    font-size:15px; padding:4px 6px;
+  }
+  .icon-btn:hover{color:var(--brass-deep);}
+
+  .edit-form{
+    background:var(--paper-dim);
+    padding:14px;
+    border-radius:2px;
+    margin-top:8px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .edit-form input{margin-bottom:0;}
+  .edit-form-actions{display:flex; gap:8px; margin-top:2px;}
+
+  .count-pill{
+    display:inline-block;
+    font-size:12px;
+    color:var(--brass-deep);
+    background:var(--paper-dim);
+    padding:4px 10px;
+    border-radius:20px;
+    margin-bottom:14px;
+  }
+
+  /* Quiz setup */
+  .setup-option{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 16px;
+    border:1px solid var(--paper-dim);
+    border-radius:2px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .setup-option.selected{border-color:var(--brass-deep); background:#F2F0E6;}
+  .setup-option .so-title{font-weight:600; font-size:14px;}
+  .setup-option .so-sub{font-size:12px; color:#6B7280; margin-top:2px;}
+  .setup-option .so-count{font-size:12px; color:var(--brass-deep); font-weight:700;}
+
+  /* Quiz */
+  .tally{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;}
+  .tally .count{font-family:'Georgia',serif; font-size:13px; color:#6B7280;}
+  .tally .score{font-size:13px; color:var(--brass-deep); font-weight:600;}
+  .prompt-kind{font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#9C7A47; margin-bottom:10px; font-weight:700;}
+  .prompt-word{font-family:'Georgia',serif; font-size:32px; line-height:1.3; margin:0 0 24px 0; padding-bottom:20px; border-bottom:1px solid var(--paper-dim);}
+  .choices{display:flex; flex-direction:column; gap:9px;}
+  .choice{text-align:left; background:#fff; border:1px solid var(--paper-dim); border-radius:2px; padding:13px 15px; font-size:14.5px; color:var(--ink); cursor:pointer; font-family:inherit; display:flex; gap:11px; align-items:flex-start;}
+  .choice .mark{font-family:'Georgia',serif; color:#B0A99A; font-size:13px; flex-shrink:0; padding-top:1px;}
+  .choice:hover:not(:disabled){border-color:var(--brass);}
+  .choice:disabled{cursor:default;}
+  .choice.correct{background:#F2F0E6; border-color:var(--brass-deep);}
+  .choice.correct .mark{color:var(--brass-deep);}
+  .choice.wrong{background:#FBEEEC; border-color:var(--red);}
+  .choice.wrong .mark{color:var(--red);}
+  .foot-row{margin-top:22px; display:flex; justify-content:flex-end; gap:10px;}
+
+  .feedback{margin-top:16px; padding:13px 15px; border-radius:2px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px;}
+  .feedback .fmark{font-family:'Georgia',serif; font-size:18px; line-height:1;}
+  .feedback .fnote{font-weight:400; color:#6B7280;}
+  .feedback.is-correct{background:#F2F0E6; color:var(--brass-deep); border:1px solid var(--brass-deep);}
+  .feedback.is-wrong{background:#FBEEEC; color:var(--red); border:1px solid var(--red);}
+
+  .example{margin-top:12px; padding:15px 17px; background:var(--paper-dim); border-left:3px solid var(--brass); border-radius:2px;}
+  .example-label{font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C7A47; font-weight:700; margin-bottom:8px;}
+  .example-sentence{font-family:'Georgia',serif; font-style:italic; font-size:15.5px; line-height:1.6; color:var(--ink);}
+  .example-translation{font-size:13px; color:#6B7280; margin-top:8px; line-height:1.6;}
+  .example-loading{font-size:13px; color:#8B93A1;}
+  .example-error{font-size:12.5px; color:var(--red);}
+
+  /* Flashcard mode */
+  .flash-card{
+    text-align:center;
+    padding:40px 20px;
+  }
+  .flash-word{font-family:'Georgia',serif; font-size:38px; margin:10px 0 30px;}
+  .flash-reveal-area{min-height:60px;}
+  .flash-meaning{font-size:20px; font-weight:600; margin-bottom:10px;}
+  .flash-btns{display:flex; gap:10px; margin-top:26px;}
+  .flash-btns .btn{flex:1;}
+
+  /* Result */
+  .result-score{font-family:'Georgia',serif; font-size:48px; margin:0; line-height:1;}
+  .result-score span{font-size:20px; color:#6B7280;}
+  .result-label{color:#6B7280; font-size:13px; margin-top:6px;}
+  .missed{margin-top:22px; padding-top:18px; border-top:1px solid var(--paper-dim);}
+  .missed-title{font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#6B7280; font-weight:600; margin-bottom:12px;}
+  .missed-item{display:flex; justify-content:space-between; gap:12px; padding:8px 0; font-size:13.5px; border-bottom:1px dashed var(--paper-dim);}
+  .missed-item .w{font-weight:600;}
+  .missed-item .m{color:#6B7280; text-align:right;}
+  .all-correct{color:var(--brass-deep); font-size:14px; margin-top:18px;}
+
+  /* Stats */
+  .stat-summary{display:flex; gap:12px; margin-bottom:20px;}
+  .stat-box{flex:1; background:var(--paper-dim); border-radius:2px; padding:16px; text-align:center;}
+  .stat-box .num{font-family:'Georgia',serif; font-size:26px;}
+  .stat-box .lbl{font-size:11px; color:#6B7280; margin-top:4px;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:9px;}
+  .bar-row .blabel{width:56px; font-size:12px; color:#6B7280; flex-shrink:0;}
+  .bar-track{flex:1; background:var(--paper-dim); border-radius:20px; height:10px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--brass);}
+  .bar-row .bcount{width:30px; font-size:12px; color:#6B7280; text-align:right; flex-shrink:0;}
+
+  .settings-note{font-size:12.5px; color:#6B7280; line-height:1.7; margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ========== HOME (word list management) ========== -->
+  <div id="screen-home">
+    <div class="eyebrow">Vocabulary Drill</div>
+    <h1>単語帳クイズ</h1>
+    <div class="sub">単語の管理と、クイズの開始はここから行います。</div>
+
+    <div class="card">
+      <h2>単語を追加</h2>
+      <div class="field-label">テキストを貼り付け</div>
+      <textarea id="addTextarea" placeholder="1行に1語ずつ、「単語,意味」の形式で貼り付け
+例）
+abundant,豊富な
+reluctant,気が進まない"></textarea>
+      <div class="hint">区切りはカンマ・コロン・タブ・ハイフンのいずれでもOK。既にある単語は自動でスキップされます。</div>
+      <div class="row">
+        <button class="btn btn-primary" id="addWordsBtn">追加する</button>
+      </div>
+      <div class="error hidden" id="addError"></div>
+      <div class="save-msg hidden" id="addMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-top:0; justify-content:space-between;">
+        <h2 style="margin-bottom:0;">単語一覧</h2>
+        <span class="count-pill" id="totalCountPill">0語</span>
+      </div>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="単語・意味で検索">
+      </div>
+      <div id="wordListWrap"></div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" id="goQuizSetupBtn">クイズを始める</button>
+    </div>
+  </div>
+
+  <!-- ========== QUIZ SETUP ========== -->
+  <div id="screen-quiz-setup" class="hidden">
+    <div class="eyebrow">Quiz Setup</div>
+    <h1>出題内容を選ぶ</h1>
+    <div class="card">
+      <h2>出題モード</h2>
+      <div class="setup-option selected" data-mode="choice">
+        <div><div class="so-title">4択クイズ</div><div class="so-sub">単語⇔意味を4択で回答</div></div>
+      </div>
+      <div class="setup-option" data-mode="flash">
+        <div><div class="so-title">フラッシュカード</div><div class="so-sub">単語を見て「わかる／わからない」を自己申告</div></div>
+      </div>
+
+      <div id="directionWrap">
+        <h2 style="margin-top:22px;">出題方向</h2>
+        <div class="toggle" id="directionToggle">
+          <button type="button" data-dir="w2m" class="active">単語 → 意味</button>
+          <button type="button" data-dir="m2w">意味 → 単語</button>
+        </div>
+      </div>
+
+      <h2 style="margin-top:22px;">出題範囲</h2>
+      <div class="setup-option selected" data-scope="all">
+        <div><div class="so-title">すべての単語</div><div class="so-sub">登録済みの単語からランダムに出題</div></div>
+        <div class="so-count" id="scopeAllCount">0語</div>
+      </div>
+      <div class="setup-option" data-scope="due">
+        <div><div class="so-title">今日の復習分</div><div class="so-sub">復習間隔が来ている単語だけ出題</div></div>
+        <div class="so-count" id="scopeDueCount">0語</div>
+      </div>
+      <div class="setup-option" data-scope="weak">
+        <div><div class="so-title">苦手単語のみ</div><div class="so-sub">正答率が低い単語だけ出題</div></div>
+        <div class="so-count" id="scopeWeakCount">0語</div>
+      </div>
+
+      <h2 style="margin-top:22px;">出題数</h2>
+      <div class="toggle" id="countToggle">
+        <button type="button" data-count="10" class="active">10問</button>
+        <button type="button" data-count="20">20問</button>
+        <button type="button" data-count="50">50問</button>
+        <button type="button" data-count="all">全部</button>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-primary" id="startQuizBtn">開始する</button>
+        <button class="btn btn-ghost" id="backHomeFromSetupBtn">戻る</button>
+      </div>
+      <div class="error hidden" id="setupError"></div>
+    </div>
+  </div>
+
+  <!-- ========== QUIZ (choice mode) ========== -->
+  <div id="screen-quiz" class="hidden">
+    <div class="card">
+      <div class="tally">
+        <span class="count" id="qCount">Q1 / 10</span>
+        <span class="score" id="qScore">正解 0</span>
+      </div>
+      <div class="prompt-kind" id="promptKind">この単語の意味は？</div>
+      <p class="prompt-word" id="promptWord"></p>
+      <div class="choices" id="choices"></div>
+      <div class="feedback hidden" id="feedback"></div>
+      <div class="example hidden" id="example"></div>
+      <div class="foot-row">
+        <button class="btn btn-ghost" id="quitQuizBtn">中断してホームへ</button>
+        <button class="btn btn-primary" id="nextBtn" disabled>次へ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== QUIZ (flashcard mode) ========== -->
+  <div id="screen-flash" class="hidden">
+    <div class="card">
+      <div class="tally">
+        <span class="count" id="fCount">1 / 10</span>
+        <span class="score" id="fScore">わかった 0</span>
+      </div>
+      <div class="flash-card">
+        <div class="prompt-kind">この単語、わかりますか？</div>
+        <div class="flash-word" id="flashWord"></div>
+        <div class="flash-reveal-area" id="flashRevealArea">
+          <button class="btn btn-ghost" id="flashRevealBtn">答えを見る</button>
+        </div>
+        <div class="example hidden" id="flashExample"></div>
+      </div>
+      <div class="flash-btns hidden" id="flashJudgeBtns">
+        <button class="btn btn-danger" id="flashNoBtn">わからなかった</button>
+        <button class="btn btn-primary" id="flashYesBtn">わかった</button>
+      </div>
+      <div class="foot-row">
+        <button class="btn btn-ghost" id="quitFlashBtn">中断してホームへ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== RESULT ========== -->
+  <div id="screen-result" class="hidden">
+    <div class="eyebrow">Result</div>
+    <h1>結果</h1>
+    <div class="card">
+      <p class="result-score"><span id="finalScore"></span><span> / <span id="finalTotal"></span></span></p>
+      <div class="result-label" id="finalLabel">正答数</div>
+      <div id="missedWrap" class="missed hidden">
+        <div class="missed-title">間違えた・わからなかった単語</div>
+        <div id="missedList"></div>
+      </div>
+      <div id="allCorrectMsg" class="all-correct hidden">全問正解です。</div>
+      <div class="row">
+        <button class="btn btn-primary" id="retryBtn">もう一度</button>
+        <button class="btn btn-ghost" id="resultHomeBtn">ホームに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== STATS ========== -->
+  <div id="screen-stats" class="hidden">
+    <div class="eyebrow">Progress</div>
+    <h1>理解度</h1>
+    <div class="card">
+      <div class="stat-summary">
+        <div class="stat-box"><div class="num" id="statTotalWords">0</div><div class="lbl">登録単語数</div></div>
+        <div class="stat-box"><div class="num" id="statAccuracy">-</div><div class="lbl">全体正答率</div></div>
+        <div class="stat-box"><div class="num" id="statDue">0</div><div class="lbl">本日の復習</div></div>
+      </div>
+      <h2>習熟度の分布</h2>
+      <div id="boxBars"></div>
+    </div>
+    <div class="card">
+      <h2>苦手な単語 TOP10</h2>
+      <div id="weakList"></div>
+    </div>
+  </div>
+
+  <!-- ========== SETTINGS ========== -->
+  <div id="screen-settings" class="hidden">
+    <div class="eyebrow">Settings</div>
+    <h1>設定</h1>
+    <div class="card">
+      <h2>例文の取り込み</h2>
+      <div class="hint" style="margin-top:0;">
+        新しく追加した単語のうち、例文がまだ登録されていないものは <span id="missingExampleCount">0</span> 語あります。
+        下のテキストには、そのままChatGPTやClaudeなどのチャットに貼り付けるだけで正しい形式の例文データが返ってくるよう、指示文とスキーマがすでに埋め込まれています。コピーして貼り付け、返ってきたJSONをそのままその下の欄に貼り付けて取り込んでください（多少キー名が異なっていても自動で認識します）。
+      </div>
+      <div class="field-label" style="margin-top:14px;">未登録の単語（コピーしてチャットへ）</div>
+      <textarea id="missingExportArea" readonly style="min-height:100px;"></textarea>
+      <div class="row">
+        <button class="btn btn-ghost btn-sm" id="copyMissingBtn">コピーする</button>
+      </div>
+
+      <div class="field-label" style="margin-top:20px;">生成された例文データを貼り付け</div>
+      <textarea id="importArea" placeholder='例：[{"word":"abundant","sentence":"...","translation":"..."}, ...]' style="min-height:100px;"></textarea>
+      <div class="row">
+        <button class="btn btn-primary" id="importExamplesBtn">取り込む</button>
+      </div>
+      <div class="error hidden" id="importError"></div>
+      <div class="save-msg hidden" id="importMsg"></div>
+    </div>
+    <div class="card">
+      <h2>データ管理</h2>
+      <div class="hint" style="margin-top:0;">単語データはすべてこの端末のブラウザ内に保存されています。</div>
+      <div class="row">
+        <button class="btn btn-danger" id="resetAllBtn">すべての単語データを削除</button>
+      </div>
+      <div class="save-msg hidden" id="resetMsg"></div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="tabbar" id="tabbar">
+  <button data-screen="home" class="active"><span class="ticon">📘</span>単語</button>
+  <button data-screen="quiz-setup"><span class="ticon">✎</span>クイズ</button>
+  <button data-screen="stats"><span class="ticon">📊</span>統計</button>
+  <button data-screen="settings"><span class="ticon">⚙</span>設定</button>
+</nav>
+
+<script>
+const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新する（他動詞）", "sentence": "Please update the report before the meeting.", "translation": "会議の前に報告書を更新してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w1", "word": "use", "meaning": "～を使用する（他動詞）", "sentence": "You can use this machine after training.", "translation": "研修を受ければこの機械を使用できます。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w2", "word": "visit", "meaning": "～を訪問する（他動詞）", "sentence": "We will visit the factory next Monday.", "translation": "来週月曜日に工場を訪問します。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w3", "word": "agree with", "meaning": "～に同意する（人）（自動詞）", "sentence": "I agree with you on this issue.", "translation": "この件についてあなたに同意します。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w4", "word": "agree on", "meaning": "～について合意する（自動詞）", "sentence": "The two companies agreed on the price.", "translation": "両社は価格について合意した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w5", "word": "apply for", "meaning": "～に応募する（自動詞）", "sentence": "She applied for the manager position.", "translation": "彼女はマネージャー職に応募した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w6", "word": "apply to", "meaning": "～に当てはまる（自動詞）", "sentence": "This rule applies to all employees.", "translation": "この規則は全従業員に当てはまる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w7", "word": "approve of", "meaning": "～を承認する・賛成する（自動詞）", "sentence": "The board approved of the new plan.", "translation": "役員会は新しい計画に賛成した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w8", "word": "arrive at", "meaning": "（地点）に到着する（自動詞）", "sentence": "The delegates arrived at the airport at noon.", "translation": "代表団は正午に空港に到着した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w9", "word": "arrive in", "meaning": "（都市・国）に到着する（自動詞）", "sentence": "The team arrived in Tokyo yesterday.", "translation": "チームは昨日東京に到着した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w10", "word": "belong to", "meaning": "～に所属する（自動詞）", "sentence": "This document belongs to the legal department.", "translation": "この書類は法務部に所属している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w11", "word": "care for", "meaning": "～の世話をする（自動詞）", "sentence": "Nurses care for patients around the clock.", "translation": "看護師は昼夜を問わず患者の世話をする。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w12", "word": "come from", "meaning": "～の出身である（自動詞）", "sentence": "Most of our clients come from overseas.", "translation": "当社の顧客のほとんどは海外出身だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w13", "word": "comment on", "meaning": "～についてコメントする（自動詞）", "sentence": "The CEO declined to comment on the rumor.", "translation": "CEOはその噂についてコメントを控えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w14", "word": "communicate with", "meaning": "～と連絡を取る（自動詞）", "sentence": "Please communicate with the supplier directly.", "translation": "サプライヤーと直接連絡を取ってください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w15", "word": "comply with", "meaning": "～を遵守する（自動詞）", "sentence": "All staff must comply with the safety rules.", "translation": "全従業員は安全規則を遵守しなければならない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w16", "word": "consist of", "meaning": "～で構成される（自動詞）", "sentence": "The committee consists of five members.", "translation": "委員会は5名で構成されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w17", "word": "contribute to", "meaning": "～に貢献する（自動詞）", "sentence": "Your work contributed to the project's success.", "translation": "あなたの働きがプロジェクトの成功に貢献した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w18", "word": "cope with", "meaning": "～に対処する（自動詞）", "sentence": "The system helps staff cope with high demand.", "translation": "そのシステムは需要増への対処に役立つ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w19", "word": "deal with", "meaning": "～を処理する（自動詞）", "sentence": "Our team deals with customer complaints daily.", "translation": "私たちのチームは毎日顧客苦情を処理する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w20", "word": "depend on", "meaning": "～に依存する（自動詞）", "sentence": "The schedule depends on the weather.", "translation": "スケジュールは天候に依存する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w21", "word": "focus on", "meaning": "～に集中する（自動詞）", "sentence": "Let's focus on the most urgent tasks.", "translation": "最も急ぎのタスクに集中しましょう。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w22", "word": "graduate from", "meaning": "～を卒業する（自動詞）", "sentence": "He graduated from a business school in Osaka.", "translation": "彼は大阪のビジネススクールを卒業した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w23", "word": "interfere with", "meaning": "～を妨げる（自動詞）", "sentence": "Noise from the road interferes with our calls.", "translation": "道路からの騒音が通話を妨げる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w24", "word": "listen to", "meaning": "～を聞く（自動詞）", "sentence": "Managers should listen to employee feedback.", "translation": "管理職は従業員の意見を聞くべきだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w25", "word": "look after", "meaning": "～の世話をする（自動詞）", "sentence": "She looks after the office supplies.", "translation": "彼女はオフィス用品の管理をしている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w26", "word": "look for", "meaning": "～を探す（自動詞）", "sentence": "We are looking for a new supplier.", "translation": "私たちは新しいサプライヤーを探している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w27", "word": "participate in", "meaning": "～に参加する（自動詞）", "sentence": "Employees are encouraged to participate in the survey.", "translation": "従業員はアンケートへの参加を推奨されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w28", "word": "pay for", "meaning": "～の代金を支払う（自動詞）", "sentence": "The company will pay for your travel expenses.", "translation": "会社があなたの旅費を支払います。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w29", "word": "prepare for", "meaning": "～に備える（自動詞）", "sentence": "We need to prepare for the audit.", "translation": "私たちは監査に備える必要がある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w30", "word": "react to", "meaning": "～に反応する（自動詞）", "sentence": "Investors reacted quickly to the announcement.", "translation": "投資家はその発表に素早く反応した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w31", "word": "recover from", "meaning": "～から回復する（自動詞）", "sentence": "Sales are starting to recover from the slump.", "translation": "売上は低迷から回復し始めている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w32", "word": "refer to", "meaning": "～を参照する（自動詞）", "sentence": "Please refer to page five for details.", "translation": "詳細は5ページを参照してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w33", "word": "rely on", "meaning": "～に頼る（自動詞）", "sentence": "Small firms often rely on local suppliers.", "translation": "中小企業は地元の仕入先に頼ることが多い。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w34", "word": "respond to", "meaning": "～に返答する（自動詞）", "sentence": "Please respond to the client within 24 hours.", "translation": "24時間以内に顧客に返答してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w35", "word": "specialize in", "meaning": "～を専門とする（自動詞）", "sentence": "Our firm specializes in tax consulting.", "translation": "当社は税務コンサルティングを専門としている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w36", "word": "succeed in", "meaning": "～に成功する（自動詞）", "sentence": "She succeeded in closing the deal.", "translation": "彼女は契約成立に成功した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w37", "word": "suffer from", "meaning": "～に苦しむ（自動詞）", "sentence": "The store suffered from low foot traffic.", "translation": "その店は客足の少なさに苦しんだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w38", "word": "talk about", "meaning": "～について話す（自動詞）", "sentence": "Let's talk about next quarter's budget.", "translation": "来四半期の予算について話しましょう。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w39", "word": "wait for", "meaning": "～を待つ（自動詞）", "sentence": "We are still waiting for approval.", "translation": "私たちはまだ承認を待っている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w40", "word": "work on", "meaning": "～に取り組む（自動詞）", "sentence": "She is working on the new proposal.", "translation": "彼女は新しい提案書に取り組んでいる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w41", "word": "extend", "meaning": "延長する、拡大する", "sentence": "The manager decided to extend the deadline by a week.", "translation": "マネージャーは締め切りを1週間延長することにした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w42", "word": "specify", "meaning": "明記する、指定する", "sentence": "Please specify the delivery date in the contract.", "translation": "契約書に配送日を明記してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w43", "word": "proofreading", "meaning": "校正", "sentence": "The editor spent hours on proofreading the manuscript.", "translation": "編集者は原稿の校正に何時間も費やした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w44", "word": "be sure", "meaning": "必ず～する、確信している", "sentence": "Be sure to save your work before closing.", "translation": "閉じる前に必ず作業内容を保存してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w45", "word": "leisure", "meaning": "余暇、自由時間", "sentence": "He spends his leisure time reading business books.", "translation": "彼は余暇の時間をビジネス書を読んで過ごす。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w46", "word": "altogether", "meaning": "完全に、全部で", "sentence": "The project was altogether more expensive than planned.", "translation": "そのプロジェクトは予定より全体的に高くついた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w47", "word": "debate", "meaning": "議論、討論する", "sentence": "The board will debate the merger proposal tomorrow.", "translation": "役員会は明日、合併案について議論する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w48", "word": "filing", "meaning": "書類整理、ファイリング", "sentence": "She spent the afternoon filing old invoices.", "translation": "彼女は午後、古い請求書のファイリングをして過ごした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w49", "word": "wealth of", "meaning": "豊富な～", "sentence": "The seminar offers a wealth of practical advice.", "translation": "そのセミナーは豊富な実践的アドバイスを提供する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w50", "word": "underestimate", "meaning": "過小評価する", "sentence": "Never underestimate the cost of a delay.", "translation": "遅延のコストを過小評価してはいけない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w51", "word": "learn", "meaning": "学ぶ、知る", "sentence": "New employees learn the system during orientation.", "translation": "新入社員はオリエンテーション中にシステムを学ぶ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w52", "word": "participants", "meaning": "参加者", "sentence": "All participants received a certificate at the end.", "translation": "すべての参加者は最後に修了証を受け取った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w53", "word": "recent", "meaning": "最近の", "sentence": "Recent sales figures show a steady increase.", "translation": "最近の売上高は着実な増加を示している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w54", "word": "on behalf of", "meaning": "～を代表して、～に代わって", "sentence": "I am writing on behalf of the marketing team.", "translation": "マーケティングチームを代表してご連絡しています。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w55", "word": "regard A as B", "meaning": "AをBと見なす", "sentence": "We regard this client as our top priority.", "translation": "私たちはこの顧客を最優先事項と見なしている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w56", "word": "several", "meaning": "いくつかの", "sentence": "Several employees suggested the same improvement.", "translation": "何人かの従業員が同じ改善案を提案した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w57", "word": "accountable for", "meaning": "～に対して責任がある", "sentence": "Each team leader is accountable for the budget.", "translation": "各チームリーダーは予算に対して責任がある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w58", "word": "arrange for X to do", "meaning": "Xが～するよう手配する", "sentence": "We arranged for a technician to visit on Friday.", "translation": "金曜日に技術者が訪問するよう手配した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w59", "word": "estimates", "meaning": "見積もり、推定", "sentence": "The contractor sent us three estimates last week.", "translation": "業者は先週、私たちに3件の見積もりを送ってきた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w60", "word": "continuing", "meaning": "継続している", "sentence": "Continuing education is required for this license.", "translation": "この資格には継続教育が求められる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w61", "word": "applicants", "meaning": "応募者、申請者", "sentence": "Over fifty applicants applied for the position.", "translation": "50人を超える応募者がその職に応募した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w62", "word": "experience", "meaning": "経験、経験する", "sentence": "Candidates need at least three years of experience.", "translation": "応募者には最低3年の経験が必要だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w63", "word": "related", "meaning": "関連した", "sentence": "Please attach any related documents to the email.", "translation": "関連する書類をメールに添付してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w64", "word": "enthusiasm", "meaning": "熱意", "sentence": "She showed great enthusiasm during the interview.", "translation": "彼女は面接中、大きな熱意を見せた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w65", "word": "integrated", "meaning": "統合された", "sentence": "The company uses an integrated payment system.", "translation": "その会社は統合された決済システムを使用している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w66", "word": "appropriate", "meaning": "適切な", "sentence": "Please wear appropriate attire for the ceremony.", "translation": "式典には適切な服装を着用してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w67", "word": "only to do", "meaning": "結果として～することになる", "sentence": "He rushed to the airport, only to miss the flight.", "translation": "彼は急いで空港に向かったが、結局飛行機に乗り遅れた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w68", "word": "participate", "meaning": "参加する", "sentence": "Employees who participate will receive a small gift.", "translation": "参加する従業員には小さな贈り物が渡される。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w69", "word": "extension", "meaning": "延長、内線", "sentence": "Please dial extension 204 for customer service.", "translation": "カスタマーサービスは内線204にお電話ください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w70", "word": "patients", "meaning": "患者", "sentence": "The clinic treats over a hundred patients a day.", "translation": "そのクリニックは1日100人以上の患者を診察する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w71", "word": "prior", "meaning": "前の、事前の", "sentence": "Prior experience in sales is preferred.", "translation": "営業での事前経験があると望ましい。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w72", "word": "fill out", "meaning": "記入する", "sentence": "Please fill out the form before your appointment.", "translation": "予約の前にこの用紙に記入してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w73", "word": "preliminary", "meaning": "予備の、事前の", "sentence": "The preliminary results look promising.", "translation": "予備的な結果は有望に見える。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w74", "word": "accordingly", "meaning": "それに応じて、したがって", "sentence": "Prices vary by season; plan accordingly.", "translation": "価格は季節によって変わるので、それに応じて計画してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w75", "word": "accord", "meaning": "一致する、合意", "sentence": "His statement does not accord with the report.", "translation": "彼の発言は報告書と一致しない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w76", "word": "achievements", "meaning": "業績、成果", "sentence": "List your key achievements on the resume.", "translation": "履歴書に主な業績を記載してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w77", "word": "accurate", "meaning": "正確な", "sentence": "We need an accurate estimate of the total cost.", "translation": "総費用の正確な見積もりが必要だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w78", "word": "factual", "meaning": "事実に基づく", "sentence": "Keep the report factual and avoid opinions.", "translation": "報告書は事実に基づいたものにし、意見は避けてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w79", "word": "unsure", "meaning": "確信がない", "sentence": "I am unsure whether the shipment will arrive on time.", "translation": "出荷が期限内に届くか確信が持てない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w80", "word": "division", "meaning": "部門、分割", "sentence": "The sales division exceeded its quarterly target.", "translation": "営業部門は四半期目標を上回った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w81", "word": "raw", "meaning": "生の、未加工の", "sentence": "The factory processes raw materials into finished goods.", "translation": "その工場は原材料を完成品に加工する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w82", "word": "secure", "meaning": "確保する、安全な", "sentence": "We managed to secure a long-term contract.", "translation": "私たちは長期契約を確保することができた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w83", "word": "registration", "meaning": "登録", "sentence": "Registration closes one week before the conference.", "translation": "登録は会議の1週間前に締め切られる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w84", "word": "perspective", "meaning": "視点、見方", "sentence": "She offered a fresh perspective on the problem.", "translation": "彼女はその問題について新鮮な視点を提示した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w85", "word": "organization", "meaning": "組織", "sentence": "The organization plans to expand overseas next year.", "translation": "その組織は来年、海外展開を計画している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w86", "word": "bring to", "meaning": "～を（ある状態に）もたらす、～に知らせる", "sentence": "Please bring this matter to the manager's attention.", "translation": "この件をマネージャーに知らせてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w87", "word": "icon", "meaning": "象徴、アイコン", "sentence": "The brand became an icon of quality service.", "translation": "そのブランドは質の高いサービスの象徴となった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w88", "word": "enthusiastically", "meaning": "熱心に", "sentence": "The team enthusiastically supported the new plan.", "translation": "チームはその新しい計画を熱心に支持した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w89", "word": "consumption", "meaning": "消費", "sentence": "Energy consumption dropped after the new policy.", "translation": "新しい方針の後、エネルギー消費は減少した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w90", "word": "strategies", "meaning": "戦略", "sentence": "The firm revised its marketing strategies this year.", "translation": "その会社は今年、マーケティング戦略を見直した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w91", "word": "alleviate", "meaning": "和らげる、軽減する", "sentence": "New software helped alleviate the workload.", "translation": "新しいソフトウェアが業務負担を軽減する助けとなった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w92", "word": "arterial", "meaning": "幹線の、動脈の", "sentence": "Traffic on the arterial road slowed deliveries.", "translation": "幹線道路の交通渋滞が配送を遅らせた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w93", "word": "qualifications", "meaning": "資格・技能・適性", "sentence": "List your qualifications clearly on the application.", "translation": "申込書に自分の資格をはっきり記載してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w94", "word": "profits", "meaning": "利益", "sentence": "Profits rose sharply after the price increase.", "translation": "値上げの後、利益は急上昇した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w95", "word": "ever over the last year", "meaning": "過去1年間でこれまでで（史上）", "sentence": "Sales were the highest ever over the last year.", "translation": "売上は過去1年間で史上最高だった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w96", "word": "significant", "meaning": "重要な、著しい", "sentence": "There was a significant drop in customer complaints.", "translation": "顧客の苦情に著しい減少が見られた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w97", "word": "rely", "meaning": "頼る、依存する", "sentence": "We rely heavily on a single supplier.", "translation": "私たちは一つの仕入先に大きく依存している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w98", "word": "several years", "meaning": "数年間", "sentence": "The renovation took several years to complete.", "translation": "改装が完了するまで数年間かかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w99", "word": "expense", "meaning": "費用、経費", "sentence": "Travel expense reports are due by Friday.", "translation": "出張経費の報告書は金曜日までに提出のこと。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w100", "word": "the least", "meaning": "最も少ない、一番〜でない", "sentence": "This branch had the least customer traffic.", "translation": "この支店は最も客足が少なかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w101", "word": "vicinity", "meaning": "近辺、周辺", "sentence": "There are several hotels in the vicinity of the station.", "translation": "駅の近辺にはホテルがいくつかある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w102", "word": "available", "meaning": "利用可能な、入手できる", "sentence": "The manager is not available until three o'clock.", "translation": "マネージャーは3時まで対応できません。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w103", "word": "correspondent", "meaning": "通信員、特派員、対応するもの", "sentence": "Our correspondent in Berlin filed the report.", "translation": "ベルリン駐在の特派員がその報告を送った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w104", "word": "revenues", "meaning": "収益、歳入", "sentence": "Annual revenues grew by ten percent.", "translation": "年間収益は10パーセント増加した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w105", "word": "fell", "meaning": "落ちた、下落した（fallの過去形）", "sentence": "Stock prices fell sharply after the announcement.", "translation": "発表の後、株価は急落した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w106", "word": "profitable", "meaning": "利益の出る、採算の取れる", "sentence": "The new product line became highly profitable.", "translation": "新製品ラインは非常に利益の出るものとなった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w107", "word": "besides", "meaning": "〜に加えて、そのうえ", "sentence": "Besides the salary, the job offers good benefits.", "translation": "給与に加えて、この仕事には良い福利厚生がある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w108", "word": "prompt X to do", "meaning": "Xに〜するよう促す", "sentence": "The complaint prompted the company to revise its policy.", "translation": "その苦情が会社に方針を見直すよう促した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w109", "word": "elsewhere", "meaning": "ほかの場所で", "sentence": "If this store is out of stock, try elsewhere.", "translation": "この店に在庫がなければ、ほかの場所を試してみてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w110", "word": "failure", "meaning": "失敗、失敗した人・物", "sentence": "The failure to meet the deadline cost the client.", "translation": "締め切りに間に合わなかったことが顧客に損害を与えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w111", "word": "suited", "meaning": "適した、ふさわしい", "sentence": "This candidate seems well suited for the role.", "translation": "この候補者はその役職によく適しているようだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w112", "word": "acquainted with X", "meaning": "Xをよく知っている、Xに精通している", "sentence": "New staff should get acquainted with the safety rules.", "translation": "新しいスタッフは安全規則に精通しておくべきだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w113", "word": "retain", "meaning": "保持する、維持する", "sentence": "Good service helps a company retain customers.", "translation": "良いサービスは企業が顧客を維持するのに役立つ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w114", "word": "aware", "meaning": "気づいている、認識している", "sentence": "Employees should be aware of the new policy.", "translation": "従業員は新しい方針を認識しておくべきだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w115", "word": "beneficially", "meaning": "有益に、有利に", "sentence": "The merger affected both companies beneficially.", "translation": "その合併は両社に有益な影響を与えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w116", "word": "liability", "meaning": "責任、負債", "sentence": "The firm faces liability for the product defect.", "translation": "その会社は製品の欠陥について責任を負う。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w117", "word": "boiler", "meaning": "ボイラー", "sentence": "The old boiler was replaced last winter.", "translation": "古いボイラーは去年の冬に交換された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w118", "word": "properly", "meaning": "適切に、正しく", "sentence": "Make sure the equipment is stored properly.", "translation": "機器が適切に保管されているか確認してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w119", "word": "situated", "meaning": "位置している、所在する", "sentence": "The warehouse is situated near the highway.", "translation": "倉庫は高速道路の近くに位置している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w120", "word": "decrease", "meaning": "減少する、減少させる", "sentence": "Customer complaints decreased after the update.", "translation": "更新後、顧客の苦情は減少した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w121", "word": "blame", "meaning": "非難する、責任を負わせる", "sentence": "Don't blame the whole team for one mistake.", "translation": "一つのミスでチーム全体を非難しないでください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w122", "word": "By the time", "meaning": "〜するまでには、〜する頃には", "sentence": "By the time we arrived, the meeting had ended.", "translation": "私たちが到着する頃には、会議は終わっていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w123", "word": "represents", "meaning": "表す、代表する", "sentence": "This figure represents last month's total sales.", "translation": "この数字は先月の総売上を表している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w124", "word": "stated", "meaning": "述べられた、明記された", "sentence": "The terms are clearly stated in the contract.", "translation": "条件は契約書に明確に明記されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w125", "word": "expertise", "meaning": "専門知識、専門技術", "sentence": "We hired a consultant for her financial expertise.", "translation": "私たちは財務の専門知識のためにコンサルタントを雇った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w126", "word": "conveniently", "meaning": "便利に、都合よく", "sentence": "The office is conveniently located near the station.", "translation": "そのオフィスは駅の近くに便利な立地にある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w127", "word": "opposite", "meaning": "反対の、向かいの", "sentence": "Our office is on the opposite side of the street.", "translation": "私たちのオフィスは通りの反対側にある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w128", "word": "across from", "meaning": "〜の向かいに", "sentence": "The bank is located across from the post office.", "translation": "銀行は郵便局の向かいに位置している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w129", "word": "next to X", "meaning": "Xの隣に", "sentence": "The new café opened next to the bookstore.", "translation": "新しいカフェは書店の隣にオープンした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w130", "word": "earned", "meaning": "得た、稼いだ", "sentence": "She earned a promotion after two years.", "translation": "彼女は2年後に昇進を得た。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w131", "word": "rating", "meaning": "評価、格付け", "sentence": "The hotel received a high rating from guests.", "translation": "そのホテルは宿泊客から高い評価を受けた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w132", "word": "in advance", "meaning": "前もって、事前に", "sentence": "Please book your seat in advance.", "translation": "事前に座席を予約してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w133", "word": "at the door", "meaning": "入口で、ドアのところで", "sentence": "Tickets will be available at the door.", "translation": "チケットは入口で入手できます。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w134", "word": "critic", "meaning": "批評家、評論家、批判する人", "sentence": "A well-known critic praised the new restaurant.", "translation": "有名な評論家が新しいレストランを称賛した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w135", "word": "phrase", "meaning": "語句、言い回し", "sentence": "Avoid using that phrase in formal emails.", "translation": "正式なメールではその言い回しを使わないでください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w136", "word": "toward", "meaning": "～の方へ、～に向かって、～に対して", "sentence": "The company is moving toward full automation.", "translation": "その会社は完全自動化に向かって進んでいる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w137", "word": "improvement", "meaning": "改善、改良", "sentence": "Customers noticed a real improvement in service.", "translation": "顧客はサービスの本当の改善に気づいた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w138", "word": "harsh", "meaning": "厳しい、過酷な", "sentence": "The critic gave a harsh review of the product.", "translation": "その評論家は製品に対して厳しいレビューを書いた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w139", "word": "omission", "meaning": "省略、怠慢", "sentence": "The report contained a significant omission.", "translation": "その報告書には重大な省略があった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w140", "word": "deliberate", "meaning": "慎重な、故意の；慎重に考える", "sentence": "The board took a deliberate approach to the merger.", "translation": "役員会は合併に対して慎重な姿勢を取った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w141", "word": "intensive", "meaning": "集中的な、徹底的な", "sentence": "New hires undergo intensive training for two weeks.", "translation": "新入社員は2週間の集中研修を受ける。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w142", "word": "look as if", "meaning": "～のように見える", "sentence": "It looks as if the shipment will be delayed.", "translation": "出荷は遅れるように見える。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w143", "word": "anticipate", "meaning": "予期する、期待する", "sentence": "We anticipate strong demand next quarter.", "translation": "来四半期は強い需要を予期している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w144", "word": "eagerly", "meaning": "熱心に、切望して", "sentence": "The interns eagerly awaited their first assignment.", "translation": "インターン生たちは最初の課題を熱心に待ち望んでいた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w145", "word": "representative", "meaning": "代表（者）、代表的な", "sentence": "A sales representative will contact you shortly.", "translation": "営業担当者がまもなくご連絡します。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w146", "word": "honor", "meaning": "名誉、敬意；敬う", "sentence": "The award is an honor for the whole team.", "translation": "その賞はチーム全体にとっての名誉だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w147", "word": "huge", "meaning": "巨大な", "sentence": "The new contract represents a huge opportunity.", "translation": "その新しい契約は巨大な機会を意味する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w148", "word": "reaction", "meaning": "反応", "sentence": "Customer reaction to the redesign was positive.", "translation": "デザイン変更に対する顧客の反応は好意的だった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w149", "word": "recently", "meaning": "最近", "sentence": "The company recently opened a branch in Osaka.", "translation": "その会社は最近、大阪に支店を開いた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w150", "word": "adopt", "meaning": "採用する、取り入れる", "sentence": "The office decided to adopt a new filing system.", "translation": "オフィスは新しいファイリングシステムを採用することにした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w151", "word": "exclusive", "meaning": "独占的な、限定的な", "sentence": "Members receive exclusive access to the sale.", "translation": "会員はそのセールへの限定アクセスを得られる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w152", "word": "completion", "meaning": "完成、完了", "sentence": "Payment is due upon completion of the work.", "translation": "支払いは作業完了時に行われる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w153", "word": "obtaining", "meaning": "得ること、取得すること", "sentence": "Obtaining a permit took longer than expected.", "translation": "許可を取得するのに予想より時間がかかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w154", "word": "neatly", "meaning": "きちんと、整然と", "sentence": "Please keep the files neatly organized.", "translation": "ファイルはきちんと整理しておいてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w155", "word": "underneath", "meaning": "～の下に、～の下で", "sentence": "The manual is stored underneath the counter.", "translation": "マニュアルはカウンターの下に保管されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w156", "word": "reorganize", "meaning": "再編成する、再整理する", "sentence": "The company plans to reorganize its sales division.", "translation": "その会社は営業部門を再編成する計画だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w157", "word": "grocery", "meaning": "食料品、食料品店", "sentence": "The new grocery store opens next Monday.", "translation": "新しい食料品店は来週月曜日に開店する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w158", "word": "as well as", "meaning": "～だけでなく、～に加えて", "sentence": "The role requires management skills as well as experience.", "translation": "その職には経験に加えてマネジメント能力が求められる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w159", "word": "overall", "meaning": "全体的な；全体で", "sentence": "Overall performance improved this quarter.", "translation": "今四半期は全体的な業績が改善した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w160", "word": "resolutely", "meaning": "断固として、毅然と", "sentence": "She resolutely refused to lower the price.", "translation": "彼女は値下げを断固として拒否した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w161", "word": "deserve", "meaning": "～に値する", "sentence": "The team's hard work deserves recognition.", "translation": "そのチームの努力は評価に値する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w162", "word": "credit", "meaning": "功績、信用、単位", "sentence": "She deserves credit for the project's success.", "translation": "彼女はそのプロジェクトの成功の功績に値する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w163", "word": "well-paid", "meaning": "高給の", "sentence": "It is a well-paid position with good benefits.", "translation": "それは福利厚生の良い高給の職だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w164", "word": "ideally", "meaning": "理想的には", "sentence": "Ideally, the report should be ready by Friday.", "translation": "理想的には、報告書は金曜日までに準備できているべきだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w165", "word": "quiet", "meaning": "静かな", "sentence": "The office is unusually quiet on Fridays.", "translation": "そのオフィスは金曜日は普段より静かだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w166", "word": "rumor", "meaning": "うわさ", "sentence": "There is a rumor about a possible merger.", "translation": "合併の可能性についてうわさがある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w167", "word": "withhold", "meaning": "差し控える、与えない", "sentence": "The manager withheld approval until costs were reviewed.", "translation": "マネージャーは費用が見直されるまで承認を差し控えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w168", "word": "largely", "meaning": "主に、大部分は", "sentence": "The delay was largely due to the weather.", "translation": "その遅延は主に天候によるものだった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w169", "word": "encouraged", "meaning": "勇気づけられた、奨励された", "sentence": "Staff are encouraged to raise concerns openly.", "translation": "スタッフは懸念を率直に伝えるよう奨励されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w170", "word": "conserve", "meaning": "保存する、節約する", "sentence": "The plant was redesigned to conserve energy.", "translation": "その工場はエネルギーを節約するよう再設計された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w171", "word": "divider", "meaning": "仕切り、区切るもの", "sentence": "A glass divider separates the two offices.", "translation": "ガラスの仕切りが二つのオフィスを分けている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w172", "word": "consideration", "meaning": "考慮、検討", "sentence": "Your proposal is under consideration by the board.", "translation": "あなたの提案は役員会で検討中だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w173", "word": "credit X to Y", "meaning": "XをYのおかげだとする、Xの功績をYに帰する", "sentence": "The manager credited the success to the whole team.", "translation": "マネージャーはその成功をチーム全体のおかげだとした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w174", "word": "depend", "meaning": "頼る、依存する", "sentence": "Delivery times depend on the destination.", "translation": "配達時間は目的地によって異なる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w175", "word": "fix", "meaning": "修理する、修正する、固定する", "sentence": "The technician came to fix the printer.", "translation": "技術者がプリンターを修理しに来た。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w176", "word": "help X to do", "meaning": "Xが～するのを手伝う", "sentence": "The manual helps new staff to understand the system.", "translation": "マニュアルは新しいスタッフがシステムを理解するのを助ける。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w177", "word": "help X do", "meaning": "Xが～するのを手伝う", "sentence": "This checklist helps employees avoid common mistakes.", "translation": "このチェックリストは従業員がよくある間違いを避けるのを助ける。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w178", "word": "make X do", "meaning": "Xに～させる（強制）", "sentence": "The policy makes staff submit reports weekly.", "translation": "その方針はスタッフに毎週報告書を提出させる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w179", "word": "have X do", "meaning": "Xに～してもらう、～させる", "sentence": "We had a technician inspect the equipment.", "translation": "私たちは技術者に機器を点検してもらった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w180", "word": "let X do", "meaning": "Xに～させる（許可）", "sentence": "The manager let the intern lead the meeting.", "translation": "マネージャーはインターンに会議を進行させた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w181", "word": "so that S can do", "meaning": "Sが～できるように", "sentence": "We revised the schedule so that everyone can attend.", "translation": "全員が参加できるようにスケジュールを見直した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w182", "word": "not only X but Y as well", "meaning": "XだけでなくYも", "sentence": "The plan improved not only sales but morale as well.", "translation": "その計画は売上だけでなく士気も改善した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w183", "word": "within walking distance of X", "meaning": "Xから徒歩圏内に", "sentence": "The hotel is within walking distance of the station.", "translation": "そのホテルは駅から徒歩圏内にある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w184", "word": "in accordance with", "meaning": "～に従って、～に一致して", "sentence": "The product was made in accordance with safety standards.", "translation": "その製品は安全基準に従って作られた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w185", "word": "frequent", "meaning": "頻繁な", "sentence": "Frequent delays frustrated many commuters.", "translation": "頻繁な遅延が多くの通勤者を苛立たせた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w186", "word": "swiftly", "meaning": "素早く", "sentence": "The team responded swiftly to the complaint.", "translation": "チームはその苦情に素早く対応した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w187", "word": "look into", "meaning": "～を調査する、～を詳しく調べる", "sentence": "We will look into the cause of the delay.", "translation": "私たちは遅延の原因を調査します。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w188", "word": "distribution", "meaning": "配布、流通、配送", "sentence": "The company handles distribution for several brands.", "translation": "その会社はいくつかのブランドの流通を担っている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w189", "word": "intention", "meaning": "意図、目的", "sentence": "It was never our intention to mislead customers.", "translation": "顧客を誤解させることは決して私たちの意図ではなかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w190", "word": "disposing", "meaning": "処分すること", "sentence": "The factory follows strict rules for disposing of waste.", "translation": "その工場は廃棄物処分に関する厳格な規則に従っている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w191", "word": "garbage", "meaning": "ごみ", "sentence": "Please take out the garbage before you leave.", "translation": "退社前にごみを出しておいてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w192", "word": "scenes", "meaning": "場面、光景", "sentence": "The training video shows real scenes from the warehouse.", "translation": "その研修ビデオは倉庫での実際の光景を映している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w193", "word": "evoke", "meaning": "呼び起こす", "sentence": "The advertisement was designed to evoke nostalgia.", "translation": "その広告は郷愁を呼び起こすように作られていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w194", "word": "certain", "meaning": "ある、特定の、確かな", "sentence": "Certain products require special handling.", "translation": "特定の製品には特別な取り扱いが必要だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w195", "word": "audience", "meaning": "聴衆、観客", "sentence": "The speaker adjusted her tone for the audience.", "translation": "話者は聴衆に合わせて口調を調整した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w196", "word": "intentionally", "meaning": "意図的に", "sentence": "The figures were not intentionally altered.", "translation": "その数値は意図的に変更されたわけではない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w197", "word": "whether or not to do", "meaning": "～するかどうか", "sentence": "We are deciding whether or not to renew the lease.", "translation": "私たちは契約を更新するかどうか決めているところだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w198", "word": "no matter how ～ S V", "meaning": "どんなに～しても", "sentence": "No matter how busy she is, she replies quickly.", "translation": "彼女はどんなに忙しくても素早く返信する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w199", "word": "adequate", "meaning": "十分な、適切な", "sentence": "The warehouse has adequate storage space.", "translation": "その倉庫には十分な保管スペースがある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w200", "word": "absence", "meaning": "不在、欠席", "sentence": "Please notify HR in case of absence.", "translation": "欠席の場合は人事部に連絡してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w201", "word": "bring", "meaning": "持ってくる、もたらす", "sentence": "Please bring your ID to the registration desk.", "translation": "登録デスクに身分証明書を持ってきてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w202", "word": "cautiously", "meaning": "注意深く", "sentence": "The manager cautiously reviewed the new contract.", "translation": "マネージャーは新しい契約書を注意深く確認した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w203", "word": "be closer", "meaning": "より近い", "sentence": "This hotel is closer to the convention center.", "translation": "このホテルはコンベンションセンターにより近い。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w204", "word": "in support of", "meaning": "～を支持して", "sentence": "Employees signed a petition in support of the change.", "translation": "従業員たちはその変更を支持する嘆願書に署名した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w205", "word": "issue a statement", "meaning": "声明を発表する", "sentence": "The company issued a statement about the recall.", "translation": "その会社はリコールについて声明を発表した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w206", "word": "expand", "meaning": "拡大する、拡張する", "sentence": "The firm plans to expand into new markets.", "translation": "その会社は新しい市場への拡大を計画している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w207", "word": "conclude", "meaning": "締めくくる、結論づける", "sentence": "The report concludes that costs will rise.", "translation": "その報告書は費用が上昇するだろうと結論づけている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w208", "word": "existing", "meaning": "既存の、現在の", "sentence": "Existing customers will receive a discount code.", "translation": "既存の顧客には割引コードが送られる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w209", "word": "wise", "meaning": "賢明な", "sentence": "It would be wise to review the contract first.", "translation": "まず契約書を確認するのが賢明だろう。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w210", "word": "emphasis", "meaning": "強調", "sentence": "The training puts emphasis on customer service.", "translation": "その研修は顧客サービスに重点を置いている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w211", "word": "tendencies", "meaning": "傾向", "sentence": "Recent tendencies show a shift toward online shopping.", "translation": "最近の傾向はオンラインショッピングへの移行を示している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w212", "word": "levels", "meaning": "水準、レベル", "sentence": "Stress levels rose during the busy season.", "translation": "繁忙期にはストレスの水準が上がった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w213", "word": "welfare", "meaning": "福祉、福利", "sentence": "The company invests heavily in employee welfare.", "translation": "その会社は従業員の福利に多くを投資している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w214", "word": "astound", "meaning": "驚嘆させる", "sentence": "The sales figures astounded the entire board.", "translation": "その売上高は役員会全体を驚嘆させた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w215", "word": "waste", "meaning": "無駄、浪費する", "sentence": "Avoid meetings that waste employees' time.", "translation": "従業員の時間を浪費する会議は避けてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w216", "word": "inspectors", "meaning": "検査官、監査員", "sentence": "Inspectors visited the plant without notice.", "translation": "検査官は予告なく工場を訪れた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w217", "word": "intriguing", "meaning": "興味をそそる", "sentence": "The proposal offers an intriguing new approach.", "translation": "その提案は興味をそそる新しいアプローチを示している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w218", "word": "draw", "meaning": "引く、引き出す", "sentence": "The report draws conclusions from years of data.", "translation": "その報告書は長年のデータから結論を引き出している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w219", "word": "primarily", "meaning": "主に", "sentence": "The delay was primarily caused by a parts shortage.", "translation": "その遅延は主に部品不足によって引き起こされた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w220", "word": "individuals", "meaning": "個人、人々", "sentence": "The workshop is open to individuals and teams alike.", "translation": "そのワークショップは個人にもチームにも開かれている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w221", "word": "investment", "meaning": "投資", "sentence": "The new equipment is a long-term investment.", "translation": "その新しい設備は長期的な投資だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w222", "word": "drought", "meaning": "干ばつ", "sentence": "The drought affected crop supply this year.", "translation": "今年は干ばつが作物の供給に影響した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w223", "word": "relief", "meaning": "救済、安心、軽減", "sentence": "The refund brought relief to frustrated customers.", "translation": "返金は苛立った顧客に安心をもたらした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w224", "word": "contribution", "meaning": "貢献、寄与", "sentence": "Her contribution to the project was significant.", "translation": "そのプロジェクトへの彼女の貢献は大きかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w225", "word": "productivity", "meaning": "生産性", "sentence": "Flexible hours improved overall productivity.", "translation": "フレックスタイム制が全体の生産性を向上させた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w226", "word": "markedly", "meaning": "著しく、顕著に", "sentence": "Customer satisfaction improved markedly this year.", "translation": "顧客満足度は今年著しく向上した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w227", "word": "criteria", "meaning": "基準（criterionの複数形）", "sentence": "Applicants must meet several strict criteria.", "translation": "応募者はいくつかの厳しい基準を満たさなければならない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w228", "word": "tuition", "meaning": "授業料", "sentence": "Tuition increased slightly for the new semester.", "translation": "新学期に向けて授業料がわずかに上がった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w229", "word": "aid", "meaning": "援助、支援", "sentence": "The government offered financial aid to small businesses.", "translation": "政府は中小企業に財政支援を提供した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w230", "word": "caterer", "meaning": "仕出し業者、給食業者", "sentence": "We hired a caterer for the company banquet.", "translation": "私たちは会社の宴会のために仕出し業者を雇った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w231", "word": "suburbs", "meaning": "郊外", "sentence": "Many employees commute from the suburbs.", "translation": "多くの従業員が郊外から通勤している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w232", "word": "inches", "meaning": "インチ", "sentence": "The screen measures fifteen inches diagonally.", "translation": "その画面は対角15インチだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w233", "word": "barely", "meaning": "かろうじて、ほとんど～ない", "sentence": "The team barely met the deadline.", "translation": "チームはかろうじて締め切りに間に合った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w234", "word": "manuscript", "meaning": "原稿、手稿", "sentence": "The publisher reviewed the manuscript for two weeks.", "translation": "出版社は2週間かけて原稿を確認した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w235", "word": "predictable", "meaning": "予測できる", "sentence": "Sales during the holiday season are fairly predictable.", "translation": "休暇シーズンの売上はかなり予測できる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w236", "word": "plot", "meaning": "筋書き、陰謀、区画", "sentence": "The company purchased a plot of land downtown.", "translation": "その会社は繁華街の区画を購入した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w237", "word": "qualify", "meaning": "資格を得る、任である", "sentence": "Employees qualify for benefits after six months.", "translation": "従業員は6ヶ月後に福利厚生の資格を得る。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w238", "word": "file", "meaning": "提出する、ファイル", "sentence": "Please file your expense report by Friday.", "translation": "金曜日までに経費報告書を提出してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w239", "word": "biology", "meaning": "生物学", "sentence": "She studied biology before joining the pharmaceutical firm.", "translation": "彼女は製薬会社に入る前に生物学を学んだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w240", "word": "go on X", "meaning": "～が続く、～について話す", "sentence": "The negotiations went on for several hours.", "translation": "交渉は数時間続いた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w241", "word": "habit", "meaning": "習慣", "sentence": "Checking inventory daily became a useful habit.", "translation": "毎日在庫を確認することが役立つ習慣になった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w242", "word": "respondent", "meaning": "回答者、被告", "sentence": "Each respondent completed the survey anonymously.", "translation": "各回答者は匿名でアンケートに回答した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w243", "word": "opportunity", "meaning": "機会", "sentence": "This internship is a great opportunity for students.", "translation": "このインターンシップは学生にとって素晴らしい機会だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w244", "word": "infrequently", "meaning": "まれに、頻繁ではなく", "sentence": "That machine breaks down infrequently.", "translation": "その機械が故障するのはまれだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w245", "word": "shareholder", "meaning": "株主", "sentence": "Shareholders approved the annual budget.", "translation": "株主たちは年間予算を承認した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w246", "word": "previously", "meaning": "以前に", "sentence": "She previously worked at a rival firm.", "translation": "彼女は以前、競合他社で働いていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w247", "word": "effective", "meaning": "効果的な", "sentence": "The new training method proved highly effective.", "translation": "その新しい研修方法は非常に効果的だと証明された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w248", "word": "pursue", "meaning": "追求する", "sentence": "The company decided to pursue new markets abroad.", "translation": "その会社は海外の新市場を追求することに決めた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w249", "word": "prepared", "meaning": "準備ができた", "sentence": "The team was well prepared for the audit.", "translation": "チームは監査に対して十分準備ができていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w250", "word": "compared", "meaning": "比較された", "sentence": "Sales this year were compared with last year's figures.", "translation": "今年の売上は昨年の数字と比較された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w251", "word": "giveaway", "meaning": "景品、無料配布", "sentence": "Visitors received a free giveaway at the booth.", "translation": "来場者はブースで無料の景品を受け取った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w252", "word": "instead of", "meaning": "～の代わりに", "sentence": "We chose email instead of a phone call.", "translation": "私たちは電話の代わりにメールを選んだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w253", "word": "cliché", "meaning": "決まり文句、ありふれた表現", "sentence": "The speech was full of business clichés.", "translation": "そのスピーチはビジネスの決まり文句だらけだった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w254", "word": "instituted", "meaning": "導入した、制定した", "sentence": "The firm instituted a new dress code last month.", "translation": "その会社は先月、新しい服装規定を導入した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w255", "word": "region", "meaning": "地域", "sentence": "Sales in this region grew steadily.", "translation": "この地域の売上は着実に伸びた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w256", "word": "extremely", "meaning": "非常に", "sentence": "The client was extremely satisfied with the result.", "translation": "顧客はその結果に非常に満足した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w257", "word": "assess", "meaning": "評価する", "sentence": "Managers assess employee performance twice a year.", "translation": "マネージャーは年に2回、従業員の業績を評価する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w258", "word": "viability", "meaning": "実現可能性、存続可能性", "sentence": "The team studied the viability of the new product.", "translation": "チームはその新製品の実現可能性を検討した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w259", "word": "expanding", "meaning": "拡大している", "sentence": "The expanding company hired ten new staff.", "translation": "その拡大している会社は新たに10人を雇用した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w260", "word": "firm", "meaning": "会社、企業", "sentence": "The firm relocated its headquarters last year.", "translation": "その会社は昨年、本社を移転した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w261", "word": "internationally", "meaning": "国際的に", "sentence": "The brand is recognized internationally.", "translation": "そのブランドは国際的に認知されている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w262", "word": "ease", "meaning": "和らげる、容易さ", "sentence": "The new software eases the reporting process.", "translation": "その新しいソフトウェアは報告作業を和らげる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w263", "word": "congestion", "meaning": "混雑、渋滞", "sentence": "Traffic congestion delayed the delivery trucks.", "translation": "交通渋滞が配送トラックを遅らせた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w264", "word": "inspection", "meaning": "検査、点検", "sentence": "The factory passed its annual safety inspection.", "translation": "その工場は年次安全点検に合格した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w265", "word": "whether to do", "meaning": "～するかどうか", "sentence": "We are discussing whether to extend the deadline.", "translation": "私たちは締め切りを延長するかどうか話し合っている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w266", "word": "anticipated", "meaning": "予期された", "sentence": "The anticipated demand did not materialize.", "translation": "予期された需要は実現しなかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w267", "word": "even if", "meaning": "たとえ～でも", "sentence": "Even if the price rises, demand should stay strong.", "translation": "たとえ価格が上がっても、需要は強いままだろう。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w268", "word": "unforeseen", "meaning": "予期しない", "sentence": "Unforeseen delays pushed back the launch date.", "translation": "予期しない遅延が発売日を後ろにずらした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w269", "word": "status", "meaning": "地位、状況", "sentence": "Please check the status of your order online.", "translation": "注文の状況はオンラインで確認してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w270", "word": "exceed", "meaning": "超える", "sentence": "This year's profits exceeded expectations.", "translation": "今年の利益は期待を超えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w271", "word": "expectation", "meaning": "期待", "sentence": "The product exceeded customer expectations.", "translation": "その製品は顧客の期待を超えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w272", "word": "capable", "meaning": "能力がある", "sentence": "She is fully capable of managing the project alone.", "translation": "彼女は一人でプロジェクトを管理する能力が十分にある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w273", "word": "legible", "meaning": "読みやすい", "sentence": "Make sure your handwriting is legible on the form.", "translation": "用紙の手書き文字は読みやすいものにしてください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w274", "word": "amount", "meaning": "量", "sentence": "A large amount of data was collected during the survey.", "translation": "調査中に大量のデータが収集された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w275", "word": "identifying", "meaning": "特定すること", "sentence": "Identifying the root cause took several days.", "translation": "根本原因を特定するのに数日かかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w276", "word": "interviewing", "meaning": "面接すること", "sentence": "The HR team spent the week interviewing candidates.", "translation": "人事チームはその週、候補者の面接に費やした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w277", "word": "decide against", "meaning": "～しないことに決める", "sentence": "The board decided against the merger.", "translation": "役員会はその合併をしないことに決めた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w278", "word": "decide on doing", "meaning": "～することに決める", "sentence": "We decided on launching the product in spring.", "translation": "私たちは春に製品を発売することに決めた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w279", "word": "as early as", "meaning": "早ければ～", "sentence": "The renovation could begin as early as next week.", "translation": "改装は早ければ来週にも始まる可能性がある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w280", "word": "indicates", "meaning": "示す", "sentence": "The data indicates a rise in online orders.", "translation": "データはオンライン注文の増加を示している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w281", "word": "on the mend", "meaning": "回復に向かって", "sentence": "Sales are on the mend after a slow quarter.", "translation": "売上は低迷した四半期の後、回復に向かっている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w282", "word": "rarely", "meaning": "めったに～ない", "sentence": "The manager rarely takes a day off.", "translation": "そのマネージャーはめったに休みを取らない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w283", "word": "application", "meaning": "応募、申請、応用", "sentence": "Please submit your application by Friday.", "translation": "金曜日までに申請書を提出してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w284", "word": "reply to", "meaning": "～に返信する、～に答える", "sentence": "Please reply to this email at your convenience.", "translation": "ご都合の良い時にこのメールに返信してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w285", "word": "in addition to", "meaning": "～に加えて", "sentence": "In addition to the salary, there is a bonus scheme.", "translation": "給与に加えて、ボーナス制度がある。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w286", "word": "sleek", "meaning": "洗練された、流線形の", "sentence": "The new model has a sleek design.", "translation": "その新モデルは洗練されたデザインをしている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w287", "word": "be pleased to do", "meaning": "喜んで～する", "sentence": "We are pleased to announce the new partnership.", "translation": "私たちは喜んで新しい提携を発表します。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w288", "word": "be pleased with X", "meaning": "Xに満足している", "sentence": "The client was pleased with the final report.", "translation": "顧客は最終報告書に満足していた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w289", "word": "address（動詞）", "meaning": "取り組む、対処する、演説する", "sentence": "The manager addressed the team's concerns directly.", "translation": "マネージャーはチームの懸念に直接対処した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w290", "word": "attribute", "meaning": "～のせいにする、属性", "sentence": "The manager attributed the delay to a supplier issue.", "translation": "マネージャーはその遅延をサプライヤーの問題のせいにした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w291", "word": "presented", "meaning": "提示された", "sentence": "The findings were presented at the annual meeting.", "translation": "その調査結果は年次総会で提示された。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w292", "word": "optimal", "meaning": "最適な", "sentence": "The team found the optimal route for deliveries.", "translation": "チームは配送の最適なルートを見つけた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w293", "word": "efficiently", "meaning": "効率的に", "sentence": "The new system processes orders more efficiently.", "translation": "新しいシステムはより効率的に注文を処理する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w294", "word": "envelope", "meaning": "封筒", "sentence": "Please seal the documents in this envelope.", "translation": "この封筒に書類を封入してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w295", "word": "affixed", "meaning": "貼り付けられた", "sentence": "A warning label was affixed to the package.", "translation": "警告ラベルがその荷物に貼り付けられた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w296", "word": "retrieve", "meaning": "取り戻す、検索する", "sentence": "You can retrieve the file from the shared drive.", "translation": "そのファイルは共有ドライブから取得できます。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w297", "word": "worth of", "meaning": "～相当の", "sentence": "We ordered ten thousand dollars' worth of supplies.", "translation": "私たちは1万ドル相当の消耗品を注文した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w298", "word": "participation", "meaning": "参加", "sentence": "Employee participation in the survey was high this year.", "translation": "今年は従業員のアンケート参加率が高かった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w299", "word": "enthusiastic", "meaning": "熱心な", "sentence": "The new hire seems enthusiastic about the role.", "translation": "新入社員はその役職に熱心なようだ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w300", "word": "efficient", "meaning": "効率的な", "sentence": "The factory adopted a more efficient assembly process.", "translation": "その工場はより効率的な組み立て工程を採用した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w301", "word": "be unsure of oneself", "meaning": "自信がない", "sentence": "The new intern seemed unsure of himself at first.", "translation": "新しいインターンは最初、自信がないようだった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w302", "word": "exhibit", "meaning": "展示する、示す", "sentence": "The company will exhibit its products at the trade show.", "translation": "その会社は見本市で製品を展示する予定だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w303", "word": "be instrumental in doing", "meaning": "～するのに役立つ、～に大きく貢献する", "sentence": "She was instrumental in closing the deal.", "translation": "彼女はその契約成立に大きく貢献した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w304", "word": "leave of absence", "meaning": "休職、休暇", "sentence": "He took a leave of absence for medical reasons.", "translation": "彼は医療上の理由で休職を取った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w305", "word": "substantially", "meaning": "かなり、大幅に", "sentence": "Costs rose substantially after the new regulation.", "translation": "新しい規制の後、費用は大幅に上昇した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w306", "word": "require", "meaning": "必要とする", "sentence": "The role requires strong communication skills.", "translation": "その職には高いコミュニケーション能力が必要とされる。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w307", "word": "playground", "meaning": "遊び場、運動場", "sentence": "The company built a playground for employees' children.", "translation": "その会社は従業員の子供のために遊び場を作った。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w308", "word": "inspect for", "meaning": "～がないか点検する", "sentence": "Technicians inspect the machines for defects weekly.", "translation": "技術者は毎週、機械に欠陥がないか点検する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w309", "word": "periodically", "meaning": "定期的に", "sentence": "The system is updated periodically for security.", "translation": "そのシステムはセキュリティのために定期的に更新される。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w310", "word": "open to the public", "meaning": "一般公開されている", "sentence": "The new exhibit is open to the public next week.", "translation": "新しい展示は来週から一般公開される。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w311", "word": "regard to", "meaning": "～に関して", "sentence": "With regard to your inquiry, please see the attachment.", "translation": "お問い合わせに関して、添付ファイルをご覧ください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w312", "word": "treat", "meaning": "扱う、治療する", "sentence": "Please treat this information as confidential.", "translation": "この情報は機密として扱ってください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w313", "word": "regardless", "meaning": "関係なく", "sentence": "The policy applies to all staff, regardless of position.", "translation": "この方針は役職に関係なく全スタッフに適用される。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w314", "word": "polite", "meaning": "礼儀正しい", "sentence": "The receptionist was polite and helpful.", "translation": "その受付係は礼儀正しく親切だった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w315", "word": "source", "meaning": "源、情報源", "sentence": "Please cite the source of your data.", "translation": "データの情報源を明記してください。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w316", "word": "production", "meaning": "生産、製造、作品", "sentence": "Production increased after the new machinery was installed.", "translation": "新しい機械が導入された後、生産は増加した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w317", "word": "organizing", "meaning": "整理すること、組織化", "sentence": "Organizing the archive took the whole afternoon.", "translation": "アーカイブを整理するのに午後いっぱいかかった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w318", "word": "expertly", "meaning": "熟練して、巧みに", "sentence": "The technician expertly repaired the broken equipment.", "translation": "技術者は壊れた機器を巧みに修理した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w319", "word": "ancient", "meaning": "古代の、とても古い", "sentence": "The museum displays ancient artifacts from the region.", "translation": "その博物館はその地域の古代の遺物を展示している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w320", "word": "advance", "meaning": "前進する、進歩する", "sentence": "The company continues to advance its research goals.", "translation": "その会社は研究目標を前進させ続けている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w321", "word": "initially", "meaning": "最初は、当初", "sentence": "Initially, the plan seemed too costly.", "translation": "当初、その計画は費用がかかりすぎるように思えた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w322", "word": "similar", "meaning": "似ている", "sentence": "Our new product is similar to a competitor's model.", "translation": "私たちの新製品は競合他社のモデルに似ている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w323", "word": "institution", "meaning": "機関、施設", "sentence": "The bank is a well-respected financial institution.", "translation": "その銀行は高く評価された金融機関だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w324", "word": "premise", "meaning": "建物、施設、前提", "sentence": "Smoking is not allowed on the premises.", "translation": "敷地内では喫煙は許可されていない。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w325", "word": "prohibit", "meaning": "禁止する", "sentence": "Company policy prohibits the use of personal devices at work.", "translation": "会社の方針は勤務中の私用端末の使用を禁止している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w326", "word": "cuisine", "meaning": "料理（特定の国・地域の）", "sentence": "The restaurant specializes in authentic Italian cuisine.", "translation": "そのレストランは本格的なイタリア料理を専門としている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w327", "word": "authentic", "meaning": "本物の、本格的な", "sentence": "Customers value the restaurant's authentic recipes.", "translation": "顧客はそのレストランの本格的なレシピを高く評価している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w328", "word": "reveal", "meaning": "明らかにする", "sentence": "The survey revealed a gap in customer satisfaction.", "translation": "その調査は顧客満足度の差を明らかにした。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w329", "word": "influential", "meaning": "影響力のある", "sentence": "She is an influential figure in the industry.", "translation": "彼女はその業界で影響力のある人物だ。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w330", "word": "formerly", "meaning": "以前は", "sentence": "He was formerly employed at a competing firm.", "translation": "彼は以前、競合他社に勤めていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w331", "word": "inexperience", "meaning": "経験不足", "sentence": "Her inexperience did not stop her from succeeding.", "translation": "彼女は経験不足にもかかわらず成功した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w332", "word": "train", "meaning": "訓練する", "sentence": "We train new employees for two full weeks.", "translation": "私たちは新入社員を丸2週間訓練する。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w333", "word": "successor", "meaning": "後継者", "sentence": "The CEO named her successor last month.", "translation": "CEOは先月、後継者を指名した。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w334", "word": "district", "meaning": "地区、地域", "sentence": "The office is located in the financial district.", "translation": "そのオフィスは金融街に位置している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w335", "word": "hustling", "meaning": "忙しく働くこと、精力的に活動すること", "sentence": "The sales floor was hustling during the holiday rush.", "translation": "休暇シーズンの繁忙期、売り場は忙しく活気づいていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w336", "word": "quite", "meaning": "かなり、とても", "sentence": "The response to the campaign was quite positive.", "translation": "そのキャンペーンへの反応はかなり好意的だった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w337", "word": "make a splash", "meaning": "話題になる、大成功する", "sentence": "The new product made a splash at the trade show.", "translation": "その新製品は見本市で話題になった。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w338", "word": "predict", "meaning": "予測する", "sentence": "Analysts predict steady growth next year.", "translation": "アナリストたちは来年の着実な成長を予測している。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w339", "word": "lighter", "meaning": "より軽い", "sentence": "The new laptop model is much lighter than the old one.", "translation": "新しいノートパソコンのモデルは旧型よりずっと軽い。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w340", "word": "consistently", "meaning": "一貫して、安定して", "sentence": "The store has consistently met its sales targets.", "translation": "その店は一貫して売上目標を達成してきた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w341", "word": "inscribe", "meaning": "刻む、記す", "sentence": "The award was inscribed with the winner's name.", "translation": "その賞には受賞者の名前が刻まれていた。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}, {"id": "w342", "word": "plague", "meaning": "疫病、悩ませるもの", "sentence": "Staff turnover continues to plague the department.", "translation": "従業員の離職はその部門を悩ませ続けている。", "box": 1, "nextReview": null, "timesShown": 0, "timesCorrect": 0}];
+(function(){
+  const STORAGE_KEY = 'word_quiz_words_v2';
+  const INTERVAL_DAYS = [0, 1, 3, 7, 14]; // index = box-1
+
+  function todayStr(){
+    return new Date().toISOString().slice(0,10);
+  }
+  function addDaysStr(days){
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0,10);
+  }
+  function isDue(w){
+    return !w.nextReview || w.nextReview <= todayStr();
+  }
+  function accuracy(w){
+    if(!w.timesShown) return null;
+    return w.timesCorrect / w.timesShown;
+  }
+
+  let words = [];
+
+  function loadWords(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw === null){
+        throw new Error('never initialized');
+      }
+      const list = JSON.parse(raw);
+      if(Array.isArray(list)){
+        words = list;
+        return;
+      }
+      throw new Error('invalid data');
+    } catch(err){
+      words = JSON.parse(JSON.stringify(SEED_WORDS));
+      saveWords();
+    }
+  }
+
+  function saveWords(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+    } catch(err){
+      console.error('save failed', err);
+    }
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function parseInput(text){
+    const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+    const result = [];
+    for(const line of lines){
+      const parts = line.split(/\t|,|:|-/).map(s=>s.trim()).filter(Boolean);
+      if(parts.length >= 2){
+        const word = parts[0];
+        const meaning = parts.slice(1).join(' ');
+        if(word && meaning) result.push({word, meaning});
+      }
+    }
+    return result;
+  }
+
+  function newWordRecord(word, meaning){
+    return {
+      id: 'u' + Date.now() + Math.floor(Math.random()*100000),
+      word, meaning,
+      sentence: null, translation: null,
+      box: 1, nextReview: null,
+      timesShown: 0, timesCorrect: 0
+    };
+  }
+
+  function recordAnswer(word, correct){
+    word.timesShown++;
+    if(correct){
+      word.timesCorrect++;
+      word.box = Math.min(5, word.box + 1);
+      word.nextReview = addDaysStr(INTERVAL_DAYS[word.box - 1]);
+    } else {
+      word.box = 1;
+      word.nextReview = addDaysStr(INTERVAL_DAYS[0]);
+    }
+    saveWords();
+  }
+
+  // ===== Screen navigation =====
+  const screens = ['home','quiz-setup','quiz','flash','result','stats','settings'];
+  const tabbar = document.getElementById('tabbar');
+  function showScreen(name){
+    screens.forEach(s=>{
+      const el = document.getElementById('screen-' + s);
+      if(el) el.classList.toggle('hidden', s !== name);
+    });
+    const isMainTab = ['home','quiz-setup','stats','settings'].includes(name);
+    tabbar.classList.toggle('hidden', !isMainTab);
+    [...tabbar.children].forEach(b=>{
+      b.classList.toggle('active', b.dataset.screen === name);
+    });
+    if(name === 'home') renderWordList();
+    if(name === 'quiz-setup') renderSetupCounts();
+    if(name === 'stats') renderStats();
+    if(name === 'settings') renderSettings();
+  }
+  tabbar.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    showScreen(btn.dataset.screen);
+  });
+
+  // ===== HOME: word list =====
+  const wordListWrap = document.getElementById('wordListWrap');
+  const searchInput = document.getElementById('searchInput');
+  const totalCountPill = document.getElementById('totalCountPill');
+  let editingId = null;
+
+  function renderWordList(){
+    const q = (searchInput.value || '').trim().toLowerCase();
+    const filtered = words.filter(w =>
+      !q || w.word.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q)
+    );
+    totalCountPill.textContent = words.length + '語';
+    wordListWrap.innerHTML = '';
+    if(filtered.length === 0){
+      wordListWrap.innerHTML = '<div class="hint">該当する単語がありません。</div>';
+      return;
+    }
+    filtered.slice(0, 300).forEach(w=>{
+      const row = document.createElement('div');
+      row.className = 'word-row';
+      const acc = accuracy(w);
+      row.innerHTML = `
+        <div class="word-main">
+          <div class="w">${escapeHtml(w.word)}</div>
+          <div class="m">${escapeHtml(w.meaning)}</div>
+        </div>
+        <div class="box-badge b${w.box}">Box${w.box}${acc!==null ? ' ・ ' + Math.round(acc*100) + '%' : ''}</div>
+        <div class="word-actions">
+          <button class="icon-btn" data-act="edit" data-id="${w.id}" title="編集">✎</button>
+          <button class="icon-btn" data-act="del" data-id="${w.id}" title="削除">🗑</button>
+        </div>
+      `;
+      wordListWrap.appendChild(row);
+      if(editingId === w.id){
+        const form = document.createElement('div');
+        form.className = 'edit-form';
+        form.innerHTML = `
+          <input type="text" id="editWordInput" value="${escapeHtml(w.word)}">
+          <input type="text" id="editMeaningInput" value="${escapeHtml(w.meaning)}">
+          <div class="edit-form-actions">
+            <button class="btn btn-primary btn-sm" id="editSaveBtn">保存</button>
+            <button class="btn btn-ghost btn-sm" id="editCancelBtn">キャンセル</button>
+          </div>
+        `;
+        wordListWrap.appendChild(form);
+        document.getElementById('editSaveBtn').addEventListener('click', ()=>{
+          const nw = document.getElementById('editWordInput').value.trim();
+          const nm = document.getElementById('editMeaningInput').value.trim();
+          if(nw && nm){ w.word = nw; w.meaning = nm; saveWords(); }
+          editingId = null;
+          renderWordList();
+        });
+        document.getElementById('editCancelBtn').addEventListener('click', ()=>{
+          editingId = null;
+          renderWordList();
+        });
+      }
+    });
+  }
+
+  wordListWrap.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-act]');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    if(btn.dataset.act === 'edit'){
+      editingId = (editingId === id) ? null : id;
+      renderWordList();
+    } else if(btn.dataset.act === 'del'){
+      if(confirm('この単語を削除しますか？')){
+        words = words.filter(w=>w.id !== id);
+        saveWords();
+        renderWordList();
+      }
+    }
+  });
+
+  searchInput.addEventListener('input', renderWordList);
+
+  // ===== HOME: add words =====
+  const addTextarea = document.getElementById('addTextarea');
+  const addWordsBtn = document.getElementById('addWordsBtn');
+  const addError = document.getElementById('addError');
+  const addMsg = document.getElementById('addMsg');
+
+  addWordsBtn.addEventListener('click', ()=>{
+    const parsed = parseInput(addTextarea.value);
+    if(parsed.length === 0){
+      addError.textContent = '追加できる単語が見つかりませんでした。';
+      addError.classList.remove('hidden');
+      return;
+    }
+    addError.classList.add('hidden');
+    const existing = new Set(words.map(w=>w.word.toLowerCase()));
+    let added = 0, skipped = 0;
+    parsed.forEach(p=>{
+      if(existing.has(p.word.toLowerCase())){
+        skipped++;
+      } else {
+        words.push(newWordRecord(p.word, p.meaning));
+        existing.add(p.word.toLowerCase());
+        added++;
+      }
+    });
+    saveWords();
+    addMsg.textContent = `${added}語を追加しました${skipped ? '（' + skipped + '語は既存のためスキップ）' : ''}。`;
+    addMsg.classList.remove('hidden');
+    addTextarea.value = '';
+    renderWordList();
+    setTimeout(()=>addMsg.classList.add('hidden'), 3000);
+  });
+
+  document.getElementById('goQuizSetupBtn').addEventListener('click', ()=> showScreen('quiz-setup'));
+
+  // ===== QUIZ SETUP =====
+  let setupMode = 'choice';
+  let setupScope = 'all';
+  let setupDirection = 'w2m';
+  let setupCount = 10;
+
+  document.querySelectorAll('.setup-option[data-mode]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.setup-option[data-mode]').forEach(o=>o.classList.remove('selected'));
+      el.classList.add('selected');
+      setupMode = el.dataset.mode;
+      document.getElementById('directionWrap').classList.toggle('hidden', setupMode === 'flash');
+    });
+  });
+  document.querySelectorAll('.setup-option[data-scope]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.setup-option[data-scope]').forEach(o=>o.classList.remove('selected'));
+      el.classList.add('selected');
+      setupScope = el.dataset.scope;
+    });
+  });
+  document.getElementById('directionToggle').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    [...document.getElementById('directionToggle').children].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    setupDirection = btn.dataset.dir;
+  });
+  document.getElementById('countToggle').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    [...document.getElementById('countToggle').children].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    setupCount = btn.dataset.count === 'all' ? Infinity : parseInt(btn.dataset.count, 10);
+  });
+
+  function weakWords(){
+    return words.filter(w => w.timesShown >= 1 && accuracy(w) < 0.6);
+  }
+  function dueWords(){
+    return words.filter(isDue);
+  }
+
+  function renderSetupCounts(){
+    document.getElementById('scopeAllCount').textContent = words.length + '語';
+    document.getElementById('scopeDueCount').textContent = dueWords().length + '語';
+    document.getElementById('scopeWeakCount').textContent = weakWords().length + '語';
+  }
+
+  document.getElementById('backHomeFromSetupBtn').addEventListener('click', ()=> showScreen('home'));
+
+  document.getElementById('startQuizBtn').addEventListener('click', ()=>{
+    let pool;
+    if(setupScope === 'due') pool = dueWords();
+    else if(setupScope === 'weak') pool = weakWords();
+    else pool = words;
+
+    if(pool.length < (setupMode === 'choice' ? 4 : 1)){
+      const setupError = document.getElementById('setupError');
+      setupError.textContent = setupMode === 'choice'
+        ? '4択クイズには対象単語が4語以上必要です。範囲を変えてください。'
+        : '出題できる単語がありません。範囲を変えてください。';
+      setupError.classList.remove('hidden');
+      return;
+    }
+    document.getElementById('setupError').classList.add('hidden');
+
+    const n = Math.min(setupCount, pool.length);
+    const sessionWords = shuffle(pool).slice(0, n);
+
+    if(setupMode === 'choice'){
+      startChoiceQuiz(sessionWords, setupDirection);
+    } else {
+      startFlashQuiz(sessionWords);
+    }
+  });
+
+  // ===== CHOICE QUIZ =====
+  let cQuestions = [];
+  let cIndex = 0;
+  let cScore = 0;
+  let cMissed = [];
+  let cLocked = false;
+  let cDirection = 'w2m';
+
+  function buildChoiceQuestions(pool, direction){
+    return pool.map(item=>{
+      const others = words.filter(w => w.word !== item.word);
+      const distractors = shuffle(others).slice(0,3);
+      const correctText = direction === 'w2m' ? item.meaning : item.word;
+      const promptText = direction === 'w2m' ? item.word : item.meaning;
+      const choiceTexts = shuffle([
+        correctText,
+        ...distractors.map(d => direction === 'w2m' ? d.meaning : d.word)
+      ]);
+      return { wordObj: item, prompt: promptText, correct: correctText, choices: choiceTexts };
+    });
+  }
+
+  function startChoiceQuiz(pool, direction){
+    cDirection = direction;
+    cQuestions = buildChoiceQuestions(pool, direction);
+    cIndex = 0; cScore = 0; cMissed = [];
+    showScreen('quiz');
+    renderChoiceQuestion();
+  }
+
+  function renderChoiceQuestion(){
+    cLocked = false;
+    document.getElementById('nextBtn').disabled = true;
+    const feedback = document.getElementById('feedback');
+    feedback.classList.add('hidden'); feedback.className = 'feedback hidden';
+    const example = document.getElementById('example');
+    example.classList.add('hidden'); example.className = 'example hidden';
+
+    const q = cQuestions[cIndex];
+    document.getElementById('qCount').textContent = `Q${cIndex+1} / ${cQuestions.length}`;
+    document.getElementById('qScore').textContent = `正解 ${cScore}`;
+    document.getElementById('promptKind').textContent = cDirection === 'w2m' ? 'この単語の意味は？' : 'この意味を表す単語は？';
+    document.getElementById('promptWord').textContent = q.prompt;
+
+    const marks = ['A','B','C','D'];
+    const wrap = document.getElementById('choices');
+    wrap.innerHTML = '';
+    q.choices.forEach((choiceText, i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.innerHTML = `<span class="mark">${marks[i]}</span><span>${escapeHtml(choiceText)}</span>`;
+      btn.addEventListener('click', ()=> selectChoice(btn, choiceText, q));
+      wrap.appendChild(btn);
+    });
+  }
+
+  function selectChoice(btn, choiceText, q){
+    if(cLocked) return;
+    cLocked = true;
+    const isCorrect = choiceText === q.correct;
+    [...document.getElementById('choices').children].forEach(c=>c.disabled = true);
+    const feedback = document.getElementById('feedback');
+    if(isCorrect){
+      btn.classList.add('correct');
+      cScore++;
+      feedback.className = 'feedback is-correct';
+      feedback.innerHTML = `<span class="fmark">◯</span><span>正解</span>`;
+    } else {
+      btn.classList.add('wrong');
+      [...document.getElementById('choices').children].forEach(c=>{
+        if(c.textContent.trim() === q.correct) c.classList.add('correct');
+      });
+      cMissed.push(q.wordObj);
+      feedback.className = 'feedback is-wrong';
+      feedback.innerHTML = `<span class="fmark">✕</span><span>不正解 <span class="fnote">正解は「${escapeHtml(q.correct)}」</span></span>`;
+    }
+    feedback.classList.remove('hidden');
+    document.getElementById('qScore').textContent = `正解 ${cScore}`;
+    document.getElementById('nextBtn').disabled = false;
+    recordAnswer(q.wordObj, isCorrect);
+    showExampleFor('example', q.wordObj);
+  }
+
+  function showExampleFor(elementId, wordObj){
+    const example = document.getElementById(elementId);
+    if(wordObj.sentence){
+      example.className = 'example';
+      example.innerHTML = `<div class="example-label">例文</div>
+        <div class="example-sentence">${escapeHtml(wordObj.sentence)}</div>
+        <div class="example-translation">${escapeHtml(wordObj.translation || '')}</div>`;
+    } else {
+      example.className = 'example';
+      example.innerHTML = `<div class="example-label">例文</div><div class="example-error">この単語の例文はまだ登録されていません。設定タブの「例文の取り込み」から追加できます。</div>`;
+    }
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    cIndex++;
+    if(cIndex >= cQuestions.length){
+      showResult(cScore, cQuestions.length, cMissed, 'choice');
+    } else {
+      renderChoiceQuestion();
+    }
+  });
+  document.getElementById('quitQuizBtn').addEventListener('click', ()=>{
+    showScreen('home');
+  });
+
+  // ===== FLASHCARD QUIZ =====
+  let fWords = [];
+  let fIndex = 0;
+  let fScore = 0;
+  let fMissed = [];
+
+  function startFlashQuiz(pool){
+    fWords = pool;
+    fIndex = 0; fScore = 0; fMissed = [];
+    showScreen('flash');
+    renderFlashQuestion();
+  }
+
+  function renderFlashQuestion(){
+    const w = fWords[fIndex];
+    document.getElementById('fCount').textContent = `${fIndex+1} / ${fWords.length}`;
+    document.getElementById('fScore').textContent = `わかった ${fScore}`;
+    document.getElementById('flashWord').textContent = w.word;
+    document.getElementById('flashExample').classList.add('hidden');
+    document.getElementById('flashJudgeBtns').classList.add('hidden');
+    const revealArea = document.getElementById('flashRevealArea');
+    revealArea.innerHTML = '<button class="btn btn-ghost" id="flashRevealBtn">答えを見る</button>';
+    document.getElementById('flashRevealBtn').addEventListener('click', ()=>{
+      revealArea.innerHTML = `<div class="flash-meaning">${escapeHtml(w.meaning)}</div>`;
+      showExampleFor('flashExample', w);
+      document.getElementById('flashExample').classList.remove('hidden');
+      document.getElementById('flashJudgeBtns').classList.remove('hidden');
+    });
+  }
+
+  function flashJudge(knew){
+    const w = fWords[fIndex];
+    recordAnswer(w, knew);
+    if(knew) fScore++; else fMissed.push(w);
+    fIndex++;
+    if(fIndex >= fWords.length){
+      showResult(fScore, fWords.length, fMissed, 'flash');
+    } else {
+      renderFlashQuestion();
+    }
+  }
+  document.getElementById('flashYesBtn').addEventListener('click', ()=> flashJudge(true));
+  document.getElementById('flashNoBtn').addEventListener('click', ()=> flashJudge(false));
+  document.getElementById('quitFlashBtn').addEventListener('click', ()=>{
+    showScreen('home');
+  });
+
+  // ===== RESULT =====
+  let lastPool = []; let lastMode = 'choice'; let lastDirection = 'w2m';
+
+  function showResult(score, total, missed, mode){
+    lastMode = mode;
+    showScreen('result');
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('finalTotal').textContent = total;
+    document.getElementById('finalLabel').textContent = mode === 'flash' ? 'わかった数' : '正答数';
+    const missedWrap = document.getElementById('missedWrap');
+    const allCorrectMsg = document.getElementById('allCorrectMsg');
+    if(missed.length > 0){
+      missedWrap.classList.remove('hidden');
+      allCorrectMsg.classList.add('hidden');
+      const list = document.getElementById('missedList');
+      list.innerHTML = '';
+      missed.forEach(w=>{
+        const row = document.createElement('div');
+        row.className = 'missed-item';
+        row.innerHTML = `<span class="w">${escapeHtml(w.word)}</span><span class="m">${escapeHtml(w.meaning)}</span>`;
+        list.appendChild(row);
+      });
+    } else {
+      missedWrap.classList.add('hidden');
+      allCorrectMsg.classList.remove('hidden');
+    }
+    lastPool = mode === 'choice' ? cQuestions.map(q=>q.wordObj) : fWords;
+  }
+
+  document.getElementById('retryBtn').addEventListener('click', ()=>{
+    if(lastMode === 'choice'){
+      startChoiceQuiz(shuffle(lastPool), cDirection);
+    } else {
+      startFlashQuiz(shuffle(lastPool));
+    }
+  });
+  document.getElementById('resultHomeBtn').addEventListener('click', ()=> showScreen('home'));
+
+  // ===== STATS =====
+  function renderStats(){
+    document.getElementById('statTotalWords').textContent = words.length;
+    const totalShown = words.reduce((s,w)=>s+w.timesShown,0);
+    const totalCorrect = words.reduce((s,w)=>s+w.timesCorrect,0);
+    document.getElementById('statAccuracy').textContent = totalShown ? Math.round(totalCorrect/totalShown*100) + '%' : '-';
+    document.getElementById('statDue').textContent = dueWords().length;
+
+    const boxCounts = [0,0,0,0,0];
+    words.forEach(w => boxCounts[w.box-1]++);
+    const maxCount = Math.max(1, ...boxCounts);
+    const boxBars = document.getElementById('boxBars');
+    boxBars.innerHTML = '';
+    boxCounts.forEach((count, i)=>{
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const pct = Math.round(count / maxCount * 100);
+      row.innerHTML = `<div class="blabel">Box${i+1}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bcount">${count}</div>`;
+      boxBars.appendChild(row);
+    });
+
+    const weakList = document.getElementById('weakList');
+    const withStats = words.filter(w=>w.timesShown>=1).sort((a,b)=>accuracy(a)-accuracy(b)).slice(0,10);
+    if(withStats.length === 0){
+      weakList.innerHTML = '<div class="hint">まだクイズの記録がありません。</div>';
+    } else {
+      weakList.innerHTML = '';
+      withStats.forEach(w=>{
+        const row = document.createElement('div');
+        row.className = 'word-row';
+        row.innerHTML = `<div class="word-main"><div class="w">${escapeHtml(w.word)}</div><div class="m">${escapeHtml(w.meaning)}</div></div><div class="box-badge b${w.box}">${Math.round(accuracy(w)*100)}%</div>`;
+        weakList.appendChild(row);
+      });
+    }
+  }
+
+  // ===== SETTINGS: example import/export =====
+  function renderSettings(){
+    const missing = words.filter(w=>!w.sentence);
+    document.getElementById('missingExampleCount').textContent = missing.length;
+    document.getElementById('missingExportArea').value = buildExportPrompt(missing);
+  }
+
+  function buildExportPrompt(missing){
+    if(missing.length === 0) return '';
+    const header = '以下の英単語について、それぞれTOEIC学習者向けの自然な例文（英語）と、その日本語訳を作ってください。\n' +
+      '出力は必ず次のJSON配列の形式のみとし、前置き・説明・コードブロック記号（```）は一切含めないでください。\n' +
+      'キー名は必ず word / sentence / translation にしてください（例文キーをexample_sentence等にしないでください）。\n\n' +
+      '出力形式の例：\n' +
+      '[{"word":"abundant","sentence":"...","translation":"..."}, {"word":"...","sentence":"...","translation":"..."}]\n\n' +
+      '単語リスト（単語 / 意味）：\n';
+    const list = missing.map(w=>`${w.word}\t${w.meaning}`).join('\n');
+    return header + list;
+  }
+
+  document.getElementById('copyMissingBtn').addEventListener('click', async ()=>{
+    const area = document.getElementById('missingExportArea');
+    area.select();
+    try{
+      await navigator.clipboard.writeText(area.value);
+    } catch(err){
+      document.execCommand('copy');
+    }
+  });
+
+  document.getElementById('importExamplesBtn').addEventListener('click', ()=>{
+    const importArea = document.getElementById('importArea');
+    const importError = document.getElementById('importError');
+    const importMsg = document.getElementById('importMsg');
+    importError.classList.add('hidden');
+    let parsed;
+    try{
+      const cleaned = importArea.value.trim().replace(/^```(json)?/i, '').replace(/```$/,'').trim();
+      parsed = JSON.parse(cleaned);
+      if(!Array.isArray(parsed)) throw new Error('not an array');
+    } catch(err){
+      importError.textContent = 'JSON形式を確認してください。例: [{"word":"abundant","sentence":"...","translation":"..."}]';
+      importError.classList.remove('hidden');
+      return;
+    }
+    const byWord = {};
+    words.forEach(w => byWord[w.word.toLowerCase()] = w);
+    let updated = 0, notFound = 0, noSentence = 0;
+    parsed.forEach(item=>{
+      if(!item || !item.word) return;
+      const target = byWord[String(item.word).toLowerCase()];
+      if(!target){ notFound++; return; }
+      const sentence = item.sentence || item.example_sentence || item.example || item.en || item.english || null;
+      const translation = item.translation || item.ja || item.japanese || item.translation_ja || item.meaning_ja || item.jp || null;
+      if(!sentence){ noSentence++; return; }
+      target.sentence = sentence;
+      target.translation = translation || target.translation;
+      updated++;
+    });
+    saveWords();
+    const notes = [];
+    if(notFound) notes.push(notFound + '語は単語一覧に見つかりませんでした');
+    if(noSentence) notes.push(noSentence + '語は例文の内容が空でした');
+    importMsg.textContent = `${updated}語の例文を取り込みました${notes.length ? '（' + notes.join('、') + '）' : ''}。`;
+    importMsg.classList.remove('hidden');
+    importArea.value = '';
+    renderSettings();
+    setTimeout(()=>importMsg.classList.add('hidden'), 4000);
+  });
+
+  document.getElementById('resetAllBtn').addEventListener('click', ()=>{
+    if(confirm('すべての単語データ（学習履歴を含む）を削除します。登録単語は0語になります。よろしいですか？')){
+      words = [];
+      saveWords();
+      renderSettings();
+      const resetMsg = document.getElementById('resetMsg');
+      resetMsg.textContent = 'すべての単語データを削除しました（0語）。';
+      resetMsg.classList.remove('hidden');
+      setTimeout(()=>resetMsg.classList.add('hidden'), 3000);
+    }
+  });
+
+  // ===== INIT =====
+  loadWords();
+  showScreen('home');
+})();
+</script>
+</body>
+</html>
