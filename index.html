@@ -312,6 +312,10 @@ reluctant,気が進まない"></textarea>
       <div class="hint">区切りはカンマ・コロン・タブ・ハイフンのいずれでもOK。既にある単語は自動でスキップされます。</div>
       <div class="row">
         <button class="btn btn-primary" id="addWordsBtn">追加する</button>
+        <button class="btn btn-ghost btn-sm" id="pasteAddBtn">クリップボードから貼り付け</button>
+        <button class="btn btn-ghost btn-sm" id="pickFileAddBtn">ファイルを選ぶ</button>
+        <button class="btn btn-danger btn-sm" id="clearAddBtn">クリア</button>
+        <input type="file" id="fileAddInput" accept=".txt,.csv,.md" style="display:none;">
       </div>
       <div class="error hidden" id="addError"></div>
       <div class="save-msg hidden" id="addMsg"></div>
@@ -378,7 +382,7 @@ reluctant,気が進まない"></textarea>
 
       <div class="row">
         <button class="btn btn-primary" id="startQuizBtn">開始する</button>
-        <button class="btn btn-ghost" id="backHomeFromSetupBtn">戻る</button>
+        <button class="btn btn-ghost" id="backHomeFromSetupBtn">単語一覧へ</button>
       </div>
       <div class="error hidden" id="setupError"></div>
     </div>
@@ -441,7 +445,8 @@ reluctant,気が進まない"></textarea>
       </div>
       <div id="allCorrectMsg" class="all-correct hidden">全問正解です。</div>
       <div class="row">
-        <button class="btn btn-primary" id="retryBtn">もう一度</button>
+        <button class="btn btn-primary" id="nextSetBtn">次へ（同条件で新しい単語）</button>
+        <button class="btn btn-ghost" id="retryBtn">同じ単語でもう一度</button>
         <button class="btn btn-ghost" id="resultHomeBtn">ホームに戻る</button>
       </div>
     </div>
@@ -486,14 +491,25 @@ reluctant,気が進まない"></textarea>
       <textarea id="importArea" placeholder='例：[{"word":"abundant","sentence":"...","translation":"..."}, ...]' style="min-height:100px;"></textarea>
       <div class="row">
         <button class="btn btn-primary" id="importExamplesBtn">取り込む</button>
+        <button class="btn btn-ghost btn-sm" id="pasteImportBtn">クリップボードから貼り付け</button>
+        <button class="btn btn-ghost btn-sm" id="pickFileImportBtn">ファイルを選ぶ</button>
+        <button class="btn btn-danger btn-sm" id="clearImportBtn">クリア</button>
+        <input type="file" id="fileImportInput" accept=".json,.txt" style="display:none;">
       </div>
       <div class="error hidden" id="importError"></div>
       <div class="save-msg hidden" id="importMsg"></div>
     </div>
     <div class="card">
       <h2>データ管理</h2>
-      <div class="hint" style="margin-top:0;">単語データはすべてこの端末のブラウザ内に保存されています。</div>
+      <div class="hint" style="margin-top:0;">単語データ（単語・意味・例文・学習履歴）はすべてこの端末のブラウザ内に保存されています。</div>
       <div class="row">
+        <button class="btn btn-ghost" id="exportBtn">エクスポート（ファイル保存）</button>
+        <button class="btn btn-ghost" id="pickFileRestoreBtn">バックアップから復元</button>
+        <input type="file" id="fileRestoreInput" accept=".json" style="display:none;">
+      </div>
+      <div class="save-msg hidden" id="exportMsg"></div>
+      <div class="error hidden" id="restoreError"></div>
+      <div class="row" style="margin-top:18px;">
         <button class="btn btn-danger" id="resetAllBtn">すべての単語データを削除</button>
       </div>
       <div class="save-msg hidden" id="resetMsg"></div>
@@ -503,8 +519,8 @@ reluctant,気が進まない"></textarea>
 </div>
 
 <nav class="tabbar" id="tabbar">
-  <button data-screen="home" class="active"><span class="ticon">📘</span>単語</button>
-  <button data-screen="quiz-setup"><span class="ticon">✎</span>クイズ</button>
+  <button data-screen="quiz-setup" class="active"><span class="ticon">✎</span>クイズ</button>
+  <button data-screen="home"><span class="ticon">📘</span>単語</button>
   <button data-screen="stats"><span class="ticon">📊</span>統計</button>
   <button data-screen="settings"><span class="ticon">⚙</span>設定</button>
 </nav>
@@ -748,6 +764,32 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
 
   document.getElementById('goQuizSetupBtn').addEventListener('click', ()=> showScreen('quiz-setup'));
 
+  document.getElementById('pasteAddBtn').addEventListener('click', async ()=>{
+    try{
+      const text = await navigator.clipboard.readText();
+      addTextarea.value = text;
+    } catch(err){
+      addError.textContent = 'クリップボードを読み取れませんでした。手動で貼り付けてください。';
+      addError.classList.remove('hidden');
+    }
+  });
+  document.getElementById('pickFileAddBtn').addEventListener('click', ()=>{
+    document.getElementById('fileAddInput').click();
+  });
+  document.getElementById('fileAddInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ addTextarea.value = reader.result; };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  document.getElementById('clearAddBtn').addEventListener('click', ()=>{
+    addTextarea.value = '';
+    addError.classList.add('hidden');
+    addMsg.classList.add('hidden');
+  });
+
   // ===== QUIZ SETUP =====
   let setupMode = 'choice';
   let setupScope = 'all';
@@ -791,6 +833,26 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
     return words.filter(isDue);
   }
 
+  // TOEIC頻出度の代用として、登録順（＝金フレ等の頻出順教材の並び順）を使う。
+  // 並びが早い単語ほど重みを大きくし、優先的に出題されやすくする（完全なランダムではない）。
+  function weightedSample(pool, n){
+    if(n >= pool.length) return shuffle(pool);
+    const scored = pool.map(item=>{
+      const rank = words.indexOf(item);
+      const weight = 1 / Math.sqrt((rank >= 0 ? rank : words.length) + 2);
+      const key = Math.pow(Math.random(), 1 / weight);
+      return {item, key};
+    });
+    scored.sort((a,b)=> b.key - a.key);
+    return scored.slice(0, n).map(s=>s.item);
+  }
+
+  function poolForScope(scope){
+    if(scope === 'due') return dueWords();
+    if(scope === 'weak') return weakWords();
+    return words;
+  }
+
   function renderSetupCounts(){
     document.getElementById('scopeAllCount').textContent = words.length + '語';
     document.getElementById('scopeDueCount').textContent = dueWords().length + '語';
@@ -799,30 +861,35 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
 
   document.getElementById('backHomeFromSetupBtn').addEventListener('click', ()=> showScreen('home'));
 
-  document.getElementById('startQuizBtn').addEventListener('click', ()=>{
-    let pool;
-    if(setupScope === 'due') pool = dueWords();
-    else if(setupScope === 'weak') pool = weakWords();
-    else pool = words;
+  let lastSetup = { mode:'choice', scope:'all', direction:'w2m', count:10 };
 
-    if(pool.length < (setupMode === 'choice' ? 4 : 1)){
+  function launchQuiz(mode, scope, direction, count){
+    const pool = poolForScope(scope);
+    if(pool.length < (mode === 'choice' ? 4 : 1)){
       const setupError = document.getElementById('setupError');
-      setupError.textContent = setupMode === 'choice'
-        ? '4択クイズには対象単語が4語以上必要です。範囲を変えてください。'
-        : '出題できる単語がありません。範囲を変えてください。';
-      setupError.classList.remove('hidden');
-      return;
+      if(setupError){
+        setupError.textContent = mode === 'choice'
+          ? '4択クイズには対象単語が4語以上必要です。範囲を変えてください。'
+          : '出題できる単語がありません。範囲を変えてください。';
+        setupError.classList.remove('hidden');
+      }
+      showScreen('quiz-setup');
+      return false;
     }
     document.getElementById('setupError').classList.add('hidden');
-
-    const n = Math.min(setupCount, pool.length);
-    const sessionWords = shuffle(pool).slice(0, n);
-
-    if(setupMode === 'choice'){
-      startChoiceQuiz(sessionWords, setupDirection);
+    lastSetup = { mode, scope, direction, count };
+    const n = Math.min(count, pool.length);
+    const sessionWords = weightedSample(pool, n);
+    if(mode === 'choice'){
+      startChoiceQuiz(sessionWords, direction);
     } else {
       startFlashQuiz(sessionWords);
     }
+    return true;
+  }
+
+  document.getElementById('startQuizBtn').addEventListener('click', ()=>{
+    launchQuiz(setupMode, setupScope, setupDirection, setupCount);
   });
 
   // ===== CHOICE QUIZ =====
@@ -833,10 +900,28 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
   let cLocked = false;
   let cDirection = 'w2m';
 
+  // 品詞を簡易推定する（登録データに品詞情報が無いため、意味の語尾などから推定する簡易ロジック）。
+  // 完璧な判定ではないため、まれに分類がずれることがある。
+  function classifyPOS(word, meaning){
+    const w = (word || '').trim();
+    const mClean = (meaning || '').replace(/[（(][^）)]*[）)]/g, '').trim();
+    if(/他動詞|自動詞/.test(meaning || '')) return '動詞';
+    if(/\s/.test(w) || /\bX\b/.test(w)) return '熟語';
+    const first = mClean.split(/[、,]/)[0].trim();
+    if(/(する|させる|なる|行う|与える|得る|示す|続ける)$/.test(first)) return '動詞';
+    if(/(的な|な)$/.test(first)) return '形容詞';
+    if(/に$/.test(first)) return '副詞';
+    return '名詞';
+  }
+
   function buildChoiceQuestions(pool, direction){
     return pool.map(item=>{
+      const itemPOS = classifyPOS(item.word, item.meaning);
       const others = words.filter(w => w.word !== item.word);
-      const distractors = shuffle(others).slice(0,3);
+      const samePOS = others.filter(w => classifyPOS(w.word, w.meaning) === itemPOS);
+      // 同じ品詞の候補が3つに満たない場合のみ、他の品詞から補う（出題不能を避けるため）
+      let distractorPool = samePOS.length >= 3 ? samePOS : samePOS.concat(shuffle(others.filter(w=>!samePOS.includes(w))));
+      const distractors = shuffle(distractorPool).slice(0,3);
       const correctText = direction === 'w2m' ? item.meaning : item.word;
       const promptText = direction === 'w2m' ? item.word : item.meaning;
       const choiceTexts = shuffle([
@@ -930,7 +1015,7 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
     }
   });
   document.getElementById('quitQuizBtn').addEventListener('click', ()=>{
-    showScreen('home');
+    showScreen('quiz-setup');
   });
 
   // ===== FLASHCARD QUIZ =====
@@ -977,7 +1062,7 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
   document.getElementById('flashYesBtn').addEventListener('click', ()=> flashJudge(true));
   document.getElementById('flashNoBtn').addEventListener('click', ()=> flashJudge(false));
   document.getElementById('quitFlashBtn').addEventListener('click', ()=>{
-    showScreen('home');
+    showScreen('quiz-setup');
   });
 
   // ===== RESULT =====
@@ -1009,6 +1094,9 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
     lastPool = mode === 'choice' ? cQuestions.map(q=>q.wordObj) : fWords;
   }
 
+  document.getElementById('nextSetBtn').addEventListener('click', ()=>{
+    launchQuiz(lastSetup.mode, lastSetup.scope, lastSetup.direction, lastSetup.count);
+  });
   document.getElementById('retryBtn').addEventListener('click', ()=>{
     if(lastMode === 'choice'){
       startChoiceQuiz(shuffle(lastPool), cDirection);
@@ -1016,7 +1104,7 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
       startFlashQuiz(shuffle(lastPool));
     }
   });
-  document.getElementById('resultHomeBtn').addEventListener('click', ()=> showScreen('home'));
+  document.getElementById('resultHomeBtn').addEventListener('click', ()=> showScreen('quiz-setup'));
 
   // ===== STATS =====
   function renderStats(){
@@ -1083,6 +1171,33 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
     }
   });
 
+  document.getElementById('pasteImportBtn').addEventListener('click', async ()=>{
+    try{
+      const text = await navigator.clipboard.readText();
+      document.getElementById('importArea').value = text;
+    } catch(err){
+      const importError = document.getElementById('importError');
+      importError.textContent = 'クリップボードを読み取れませんでした。手動で貼り付けてください。';
+      importError.classList.remove('hidden');
+    }
+  });
+  document.getElementById('pickFileImportBtn').addEventListener('click', ()=>{
+    document.getElementById('fileImportInput').click();
+  });
+  document.getElementById('fileImportInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ document.getElementById('importArea').value = reader.result; };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  document.getElementById('clearImportBtn').addEventListener('click', ()=>{
+    document.getElementById('importArea').value = '';
+    document.getElementById('importError').classList.add('hidden');
+    document.getElementById('importMsg').classList.add('hidden');
+  });
+
   document.getElementById('importExamplesBtn').addEventListener('click', ()=>{
     const importArea = document.getElementById('importArea');
     const importError = document.getElementById('importError');
@@ -1123,6 +1238,61 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
     setTimeout(()=>importMsg.classList.add('hidden'), 4000);
   });
 
+  // ===== EXPORT / RESTORE =====
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      appVersion: 'word-quiz-v1',
+      words: words
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = todayStr().replace(/-/g,'');
+    a.href = url;
+    a.download = `word-quiz-backup-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=> URL.revokeObjectURL(url), 5000);
+    const exportMsg = document.getElementById('exportMsg');
+    exportMsg.textContent = `${words.length}語をエクスポートしました。`;
+    exportMsg.classList.remove('hidden');
+    setTimeout(()=>exportMsg.classList.add('hidden'), 3000);
+  });
+
+  document.getElementById('pickFileRestoreBtn').addEventListener('click', ()=>{
+    document.getElementById('fileRestoreInput').click();
+  });
+  document.getElementById('fileRestoreInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const restoreError = document.getElementById('restoreError');
+    restoreError.classList.add('hidden');
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        const list = Array.isArray(data) ? data : data.words;
+        if(!Array.isArray(list)) throw new Error('invalid format');
+        if(!confirm(`${list.length}語のバックアップを読み込みます。現在のデータは上書きされます。よろしいですか？`)) return;
+        words = list;
+        saveWords();
+        renderSettings();
+        const exportMsg = document.getElementById('exportMsg');
+        exportMsg.textContent = `${list.length}語を復元しました。`;
+        exportMsg.classList.remove('hidden');
+        setTimeout(()=>exportMsg.classList.add('hidden'), 3000);
+      } catch(err){
+        restoreError.textContent = 'バックアップファイルの形式を読み取れませんでした。';
+        restoreError.classList.remove('hidden');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
   document.getElementById('resetAllBtn').addEventListener('click', ()=>{
     if(confirm('すべての単語データ（学習履歴を含む）を削除します。登録単語は0語になります。よろしいですか？')){
       words = [];
@@ -1137,13 +1307,23 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
 
   // ===== INIT =====
   loadWords();
-  showScreen('home');
+  showScreen('quiz-setup');
 })();
 </script>
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      navigator.serviceWorker.register('./sw.js').then((reg)=>{
+        // ページを開くたびに新しいバージョンがあるか確認する
+        reg.update();
+      }).catch(()=>{});
+    });
+    // 新しいService Workerが有効になったら、内容を最新化するため1回だけ自動リロードする
+    let hasReloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(hasReloaded) return;
+      hasReloaded = true;
+      window.location.reload();
     });
   }
 </script>
