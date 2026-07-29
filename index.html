@@ -233,6 +233,30 @@
   .setup-option .so-sub{font-size:12px; color:#6B7280; margin-top:2px;}
   .setup-option .so-count{font-size:12px; color:var(--brass-deep); font-weight:700;}
 
+  /* Compact quiz setup screen (fits without scrolling) */
+  .setup-h1{font-size:20px; margin-bottom:10px;}
+  .setup-card{padding:16px 18px;}
+  .setup-label{font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#6B7280; font-weight:700; margin:14px 0 7px;}
+  .setup-label:first-child{margin-top:0;}
+  .toggle-wide{width:100%;}
+  .toggle-wide button{flex:1;}
+  .scope-row{display:flex; gap:6px;}
+  .scope-chip{
+    flex:1;
+    border:1px solid var(--input-border);
+    border-radius:2px;
+    padding:9px 6px;
+    text-align:center;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .scope-chip.selected{border-color:var(--brass-deep); background:#E5F4FC;}
+  .scope-chip .sc-title{font-size:12.5px; font-weight:600;}
+  .scope-chip .sc-count{font-size:11px; color:var(--brass-deep); font-weight:700;}
+  .setup-actions{margin-top:18px;}
+
   /* Quiz */
   .tally{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;}
   .tally .count{font-family:'Georgia',serif; font-size:13px; color:#6B7280;}
@@ -346,47 +370,44 @@ reluctant,気が進まない"></textarea>
   <!-- ========== QUIZ SETUP ========== -->
   <div id="screen-quiz-setup" class="hidden">
     <div class="eyebrow">Quiz Setup</div>
-    <h1>出題内容を選ぶ</h1>
-    <div class="card">
-      <h2>出題モード</h2>
-      <div class="setup-option selected" data-mode="choice">
-        <div><div class="so-title">4択クイズ</div><div class="so-sub">単語⇔意味を4択で回答</div></div>
-      </div>
-      <div class="setup-option" data-mode="flash">
-        <div><div class="so-title">フラッシュカード</div><div class="so-sub">単語を見て「わかる／わからない」を自己申告</div></div>
+    <h1 class="setup-h1">出題内容を選ぶ</h1>
+    <div class="card setup-card">
+      <div class="setup-label">出題モード</div>
+      <div class="toggle toggle-wide" id="modeToggle">
+        <button type="button" data-mode="choice" class="active">4択クイズ</button>
+        <button type="button" data-mode="flash">フラッシュカード</button>
       </div>
 
       <div id="directionWrap">
-        <h2 style="margin-top:22px;">出題方向</h2>
-        <div class="toggle" id="directionToggle">
+        <div class="setup-label">出題方向</div>
+        <div class="toggle toggle-wide" id="directionToggle">
           <button type="button" data-dir="w2m" class="active">単語 → 意味</button>
           <button type="button" data-dir="m2w">意味 → 単語</button>
         </div>
       </div>
 
-      <h2 style="margin-top:22px;">出題範囲</h2>
-      <div class="setup-option selected" data-scope="all">
-        <div><div class="so-title">すべての単語</div><div class="so-sub">登録済みの単語からランダムに出題</div></div>
-        <div class="so-count" id="scopeAllCount">0語</div>
-      </div>
-      <div class="setup-option" data-scope="due">
-        <div><div class="so-title">今日の復習分</div><div class="so-sub">復習間隔が来ている単語だけ出題</div></div>
-        <div class="so-count" id="scopeDueCount">0語</div>
-      </div>
-      <div class="setup-option" data-scope="weak">
-        <div><div class="so-title">苦手単語のみ</div><div class="so-sub">正答率が低い単語だけ出題</div></div>
-        <div class="so-count" id="scopeWeakCount">0語</div>
+      <div class="setup-label">出題範囲</div>
+      <div class="scope-row">
+        <div class="scope-chip selected" data-scope="all">
+          <span class="sc-title">すべて</span><span class="sc-count" id="scopeAllCount">0語</span>
+        </div>
+        <div class="scope-chip" data-scope="due">
+          <span class="sc-title">今日の復習</span><span class="sc-count" id="scopeDueCount">0語</span>
+        </div>
+        <div class="scope-chip" data-scope="weak">
+          <span class="sc-title">苦手単語</span><span class="sc-count" id="scopeWeakCount">0語</span>
+        </div>
       </div>
 
-      <h2 style="margin-top:22px;">出題数</h2>
-      <div class="toggle" id="countToggle">
+      <div class="setup-label">出題数</div>
+      <div class="toggle toggle-wide" id="countToggle">
         <button type="button" data-count="10" class="active">10問</button>
         <button type="button" data-count="20">20問</button>
         <button type="button" data-count="50">50問</button>
         <button type="button" data-count="all">全部</button>
       </div>
 
-      <div class="row">
+      <div class="row setup-actions">
         <button class="btn btn-primary" id="startQuizBtn">開始する</button>
         <button class="btn btn-ghost" id="backHomeFromSetupBtn">単語一覧へ</button>
       </div>
@@ -802,17 +823,17 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
   let setupDirection = 'w2m';
   let setupCount = 10;
 
-  document.querySelectorAll('.setup-option[data-mode]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      document.querySelectorAll('.setup-option[data-mode]').forEach(o=>o.classList.remove('selected'));
-      el.classList.add('selected');
-      setupMode = el.dataset.mode;
-      document.getElementById('directionWrap').classList.toggle('hidden', setupMode === 'flash');
-    });
+  document.getElementById('modeToggle').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    [...document.getElementById('modeToggle').children].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    setupMode = btn.dataset.mode;
+    document.getElementById('directionWrap').classList.toggle('hidden', setupMode === 'flash');
   });
-  document.querySelectorAll('.setup-option[data-scope]').forEach(el=>{
+  document.querySelectorAll('.scope-chip[data-scope]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      document.querySelectorAll('.setup-option[data-scope]').forEach(o=>o.classList.remove('selected'));
+      document.querySelectorAll('.scope-chip[data-scope]').forEach(o=>o.classList.remove('selected'));
       el.classList.add('selected');
       setupScope = el.dataset.scope;
     });
