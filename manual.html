@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>単語帳クイズ 使い方ガイド</title>
+<style>
+  :root{
+    --ink:#123A57;
+    --ink-soft:#1B4A6B;
+    --paper:#FFFFFF;
+    --paper-dim:#EAF6FE;
+    --brass:#2FB6F6;
+    --brass-deep:#1690D0;
+    --red:#C0524A;
+    --slate:#5C7C90;
+    --input-border:#BFE1F4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:linear-gradient(180deg, #EAF7FE 0%, #D9EFFC 45%, #CDE9FB 100%);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:'Inter','Hiragino Sans','Yu Gothic',sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  .stage{ max-width:640px; margin:0 auto; padding:24px 16px 16px; }
+  .eyebrow{
+    font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--brass-deep); margin-bottom:6px; font-weight:700;
+  }
+  h1{
+    font-family:'Georgia','Hiragino Mincho ProN',serif;
+    font-size:26px; font-weight:400; margin:0 0 6px 0;
+  }
+  .sub{ color:var(--slate); font-size:13.5px; margin-bottom:20px; line-height:1.7; }
+
+  /* Quick nav chips */
+  .nav-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .nav-chips a{
+    display:inline-block; font-size:12.5px; font-weight:600; color:var(--brass-deep);
+    background:#fff; border:1px solid var(--input-border); border-radius:20px;
+    padding:7px 13px; text-decoration:none;
+  }
+
+  .card{
+    background:var(--paper); border-radius:3px; margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(18,58,87,0.08);
+    overflow:hidden;
+  }
+  summary{
+    list-style:none; cursor:pointer; padding:16px 18px;
+    font-family:'Georgia','Hiragino Mincho ProN',serif; font-size:16.5px;
+    display:flex; align-items:center; gap:10px;
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary .num{
+    font-family:'Inter',sans-serif; font-size:11px; font-weight:700; color:var(--brass-deep);
+    background:var(--paper-dim); border-radius:20px; padding:3px 9px; flex-shrink:0;
+  }
+  summary::after{
+    content:'+'; margin-left:auto; font-size:20px; color:var(--slate); font-weight:300;
+  }
+  details[open] summary::after{ content:'−'; }
+  details[open] summary{ border-bottom:1px solid var(--input-border); }
+  .content{ padding:6px 18px 20px; font-size:14px; line-height:1.85; }
+  .content h3{
+    font-size:13px; color:var(--brass-deep); margin:18px 0 6px; font-weight:700;
+  }
+  .content h3:first-child{ margin-top:4px; }
+  .content p{ margin:0 0 10px; }
+  .content ul, .content ol{ margin:0 0 10px; padding-left:20px; }
+  .content li{ margin-bottom:6px; }
+  .content code{
+    background:var(--paper-dim); color:var(--ink); padding:2px 6px; border-radius:3px;
+    font-family:'Menlo','Consolas',monospace; font-size:12.5px;
+  }
+  .tip{
+    background:var(--paper-dim); border-left:3px solid var(--brass); border-radius:2px;
+    padding:10px 13px; font-size:13px; margin:10px 0; line-height:1.7;
+  }
+  .tip b{ color:var(--brass-deep); }
+  .warn{
+    background:#FBEEEC; border-left:3px solid var(--red); border-radius:2px;
+    padding:10px 13px; font-size:13px; margin:10px 0; line-height:1.7; color:#7A342D;
+  }
+  .warn b{ color:var(--red); }
+  .kbd{
+    display:inline-block; background:#fff; border:1px solid var(--input-border);
+    border-radius:4px; padding:1px 7px; font-size:12px; font-weight:600; color:var(--ink);
+  }
+  table{ width:100%; border-collapse:collapse; font-size:13px; margin:8px 0 12px; }
+  th, td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--input-border); }
+  th{ color:var(--slate); font-weight:600; font-size:11.5px; text-transform:uppercase; }
+  footer{ text-align:center; color:var(--slate); font-size:12px; margin-top:24px; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="eyebrow">User Guide</div>
+  <h1>単語帳クイズ 使い方ガイド</h1>
+  <div class="sub">このページはスマホでの閲覧を想定しています。気になる項目をタップして開いてください。</div>
+
+  <div class="nav-chips">
+    <a href="#start">はじめに</a>
+    <a href="#words">単語の管理</a>
+    <a href="#quiz">クイズの始め方</a>
+    <a href="#review">復習の仕組み</a>
+    <a href="#example">例文</a>
+    <a href="#stats">統計</a>
+    <a href="#data">データ管理</a>
+    <a href="#trouble">困ったとき</a>
+  </div>
+
+  <div class="card" id="start">
+    <details open>
+      <summary><span class="num">01</span>はじめに</summary>
+      <div class="content">
+        <p>このアプリは、登録した英単語を4択クイズやフラッシュカードで学習するための個人用アプリです。単語データはすべてこの端末のブラウザ内に保存され、外部には送信されません。</p>
+        <h3>ホーム画面への追加（まだの場合）</h3>
+        <ol>
+          <li>Safariでアプリのページを開く</li>
+          <li>下部の共有ボタン（□に↑）をタップ</li>
+          <li>「ホーム画面に追加」を選択</li>
+        </ol>
+        <p>これでアイコンからワンタップで開けるようになります。</p>
+        <h3>画面構成</h3>
+        <p>下部のタブで4つの画面を切り替えます。</p>
+        <table>
+          <tr><th>タブ</th><th>できること</th></tr>
+          <tr><td>クイズ</td><td>出題内容を選んでクイズを開始（アプリを開いた時の最初の画面）</td></tr>
+          <tr><td>単語</td><td>単語の追加・検索・編集・削除</td></tr>
+          <tr><td>統計</td><td>正答率や習熟度の確認</td></tr>
+          <tr><td>設定</td><td>例文の取り込み、データのバックアップ・削除</td></tr>
+        </table>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="words">
+    <details>
+      <summary><span class="num">02</span>単語の管理</summary>
+      <div class="content">
+        <h3>単語を追加する</h3>
+        <p>「単語」タブ上部のテキストエリアに、1行1語で貼り付けます。</p>
+        <p><code>単語,意味</code>の形式（区切りはカンマ・コロン・タブ・ハイフンいずれも可）</p>
+        <div class="tip">例：<br><code>abundant,豊富な</code><br><code>reluctant,気が進まない</code></div>
+        <p>入力したら「追加する」をタップ。すでに登録済みの単語は自動でスキップされるので、同じテキストを何度貼り付けても重複しません。</p>
+        <h3>スマホでの入力を楽にする方法</h3>
+        <ul>
+          <li><b>クリップボードから貼り付け</b>：コピー済みの内容をワンタップで反映</li>
+          <li><b>ファイルを選ぶ</b>：あらかじめ「ファイル」アプリに保存したテキストを読み込む（長文はこちらが便利）</li>
+          <li><b>クリア</b>：入力欄の内容を消去</li>
+        </ul>
+        <h3>単語一覧で検索・編集・削除</h3>
+        <p>「単語」タブの一覧から、検索ボックスで絞り込みできます。各単語の右側にある✎（編集）で単語・意味を修正、🗑（削除）で削除できます。</p>
+        <p>単語の右側の「Box1」〜「Box5」の表示は、後述する復習の習熟度です。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="quiz">
+    <details>
+      <summary><span class="num">03</span>クイズの始め方</summary>
+      <div class="content">
+        <h3>出題モード</h3>
+        <ul>
+          <li><b>4択クイズ</b>：単語⇔意味を4択で回答</li>
+          <li><b>フラッシュカード</b>：単語を見て「わかる／わからない」を自己申告</li>
+        </ul>
+        <h3>出題方向（4択クイズのみ）</h3>
+        <p>「単語→意味」（単語を見て意味を選ぶ）と「意味→単語」（意味を見て単語を選ぶ）を切り替えられます。</p>
+        <h3>出題範囲</h3>
+        <table>
+          <tr><th>範囲</th><th>内容</th></tr>
+          <tr><td>すべて</td><td>登録済み単語からランダムに出題（頻出度の高い単語がやや出やすくなります）</td></tr>
+          <tr><td>今日の復習</td><td>復習のタイミングが来ている単語だけを出題</td></tr>
+          <tr><td>苦手単語</td><td>正答率が低い単語だけを出題</td></tr>
+        </table>
+        <h3>出題数</h3>
+        <p>10問・20問・50問・全部から選べます。</p>
+        <h3>クイズ中にできること</h3>
+        <ul>
+          <li>回答すると正解・不正解と、登録済みなら例文が表示されます</li>
+          <li>「中断してホームへ」でいつでも切り上げ可能（それまでの回答はすべて保存されています）</li>
+        </ul>
+        <h3>結果画面の3つのボタン</h3>
+        <ul>
+          <li><b>次へ（同条件で新しい単語）</b>：同じ設定のまま、違う単語で続ける</li>
+          <li><b>同じ単語でもう一度</b>：今回出た単語だけをもう一度復習</li>
+          <li><b>ホームに戻る</b>：クイズ設定画面へ</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="review">
+    <details>
+      <summary><span class="num">04</span>復習の仕組み（忘却曲線）</summary>
+      <div class="content">
+        <p>単語ごとに「Box1」〜「Box5」の5段階で習熟度を管理しています（Leitner式）。</p>
+        <table>
+          <tr><th>正解した場合</th><td>Boxが1つ上がり、次の出題まで間隔が延びる</td></tr>
+          <tr><th>不正解だった場合</th><td>Box1に戻り、また近いうちに出題される</td></tr>
+        </table>
+        <p>出題間隔の目安：Box1＝即日 → Box2＝1日後 → Box3＝3日後 → Box4＝7日後 → Box5＝14日後</p>
+        <div class="tip">「今日の復習」を毎日の習慣にすると、この仕組みが自動でスケジュールを組んでくれます。</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="example">
+    <details>
+      <summary><span class="num">05</span>例文について</summary>
+      <div class="content">
+        <p>最初から登録されている単語には、TOEIC学習向けの例文と日本語訳があらかじめ入っています。新しく追加した単語には例文が無いため、クイズ中は「この単語の例文はまだ登録されていません」と表示されます。</p>
+        <h3>例文を追加する方法</h3>
+        <ol>
+          <li>「設定」タブ →「例文の取り込み」を開く</li>
+          <li>「未登録の単語」の欄をコピー（すでに指示文とスキーマが埋め込まれています）</li>
+          <li>Claudeなどのチャットに貼り付けて送信</li>
+          <li>返ってきたJSONをコピーし、「生成された例文データを貼り付け」欄に貼る</li>
+          <li>「取り込む」をタップ</li>
+        </ol>
+        <div class="tip">スマホでは、JSONを一度「ファイル」に保存してから「ファイルを選ぶ」で読み込む方が、長文をコピペするより楽な場合があります。</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="stats">
+    <details>
+      <summary><span class="num">06</span>統計の見方</summary>
+      <div class="content">
+        <ul>
+          <li><b>登録単語数</b>：現在登録している単語の総数</li>
+          <li><b>全体正答率</b>：これまでのクイズ回答全体の正答率</li>
+          <li><b>本日の復習</b>：今日出題タイミングが来ている単語数</li>
+          <li><b>習熟度の分布</b>：Box1〜5に何語ずつあるかのグラフ</li>
+          <li><b>苦手な単語TOP10</b>：正答率が低い順の一覧</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="data">
+    <details>
+      <summary><span class="num">07</span>データ管理</summary>
+      <div class="content">
+        <p>単語・意味・例文・学習履歴は、すべてこの端末のブラウザ内に保存されています。</p>
+        <h3>バックアップ（エクスポート）</h3>
+        <p>「設定」→「エクスポート（ファイル保存）」で、全データをJSONファイルとして保存できます。機種変更や万一のトラブルに備えて、時々バックアップしておくのがおすすめです。</p>
+        <h3>復元</h3>
+        <p>「バックアップから復元」で、保存しておいたJSONファイルを読み込めます。現在のデータは上書きされます。</p>
+        <div class="warn"><b>注意：</b>「すべての単語データを削除」を押すと、登録単語は本当に0語になります（デフォルトの単語は復活しません）。実行前に一度エクスポートしておくと安心です。</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card" id="trouble">
+    <details>
+      <summary><span class="num">08</span>困ったとき</summary>
+      <div class="content">
+        <h3>アプリを更新したのに反映されない</h3>
+        <ol>
+          <li>ホーム画面のアプリを完全に終了する（下から上にスワイプして閉じる）</li>
+          <li>もう一度アイコンをタップして開き直す</li>
+        </ol>
+        <p>それでも変わらない場合は、数分待ってからもう一度試してください。</p>
+        <h3>ホーム画面のアイコンの見た目が変わらない</h3>
+        <p>アイコン画像はiOSの仕様上キャッシュされるため、中身の機能更新とは別に、次の手順が必要です。</p>
+        <ol>
+          <li>ホーム画面のアイコンを長押し →「Appを削除」</li>
+          <li>Safariで開き直し、共有ボタンから「ホーム画面に追加」をやり直す</li>
+        </ol>
+        <div class="warn"><b>注意：</b>Safariの設定にある「Webサイトのデータを削除」は絶対に使わないでください。単語データごと消えてしまいます。データを消したい時は、必ずアプリ内の「すべての単語データを削除」を使ってください。</div>
+      </div>
+    </details>
+  </div>
+
+  <footer>単語帳クイズ ／ 個人学習用アプリ</footer>
+</div>
+</body>
+</html>

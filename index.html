@@ -144,7 +144,7 @@
     display:flex;
     z-index:50;
   }
-  .tabbar button{
+  .tabbar button, .tabbar a{
     flex:1;
     background:none;
     border:none;
@@ -157,8 +157,9 @@
     flex-direction:column;
     align-items:center;
     gap:4px;
+    text-decoration:none;
   }
-  .tabbar button .ticon{font-size:17px; line-height:1;}
+  .tabbar button .ticon, .tabbar a .ticon{font-size:17px; line-height:1;}
   .tabbar button.active{color:var(--brass);}
 
   /* Word list */
@@ -550,6 +551,7 @@ reluctant,気が進まない"></textarea>
   <button data-screen="home"><span class="ticon">📘</span>単語</button>
   <button data-screen="stats"><span class="ticon">📊</span>統計</button>
   <button data-screen="settings"><span class="ticon">⚙</span>設定</button>
+  <a href="./manual.html" target="_blank" rel="noopener"><span class="ticon">📖</span>マニュアル</a>
 </nav>
 
 <script>
