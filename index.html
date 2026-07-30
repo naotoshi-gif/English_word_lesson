@@ -144,7 +144,7 @@
     display:flex;
     z-index:50;
   }
-  .tabbar button, .tabbar a{
+  .tabbar button{
     flex:1;
     background:none;
     border:none;
@@ -157,9 +157,8 @@
     flex-direction:column;
     align-items:center;
     gap:4px;
-    text-decoration:none;
   }
-  .tabbar button .ticon, .tabbar a .ticon{font-size:17px; line-height:1;}
+  .tabbar button .ticon{font-size:17px; line-height:1;}
   .tabbar button.active{color:var(--brass);}
 
   /* Word list */
@@ -546,12 +545,16 @@ reluctant,気が進まない"></textarea>
 
 </div>
 
+<div id="screen-manual" class="hidden" style="position:fixed; top:0; left:0; right:0; bottom:64px; background:#fff;">
+  <iframe src="./manual.html" style="width:100%; height:100%; border:0; display:block;"></iframe>
+</div>
+
 <nav class="tabbar" id="tabbar">
   <button data-screen="quiz-setup" class="active"><span class="ticon">✎</span>クイズ</button>
   <button data-screen="home"><span class="ticon">📘</span>単語</button>
   <button data-screen="stats"><span class="ticon">📊</span>統計</button>
   <button data-screen="settings"><span class="ticon">⚙</span>設定</button>
-  <a href="./manual.html" target="_blank" rel="noopener"><span class="ticon">📖</span>マニュアル</a>
+  <button data-screen="manual"><span class="ticon">📖</span>マニュアル</button>
 </nav>
 
 <script>
@@ -657,14 +660,14 @@ const SEED_WORDS = [{"id": "w0", "word": "update", "meaning": "～を更新す�
   }
 
   // ===== Screen navigation =====
-  const screens = ['home','quiz-setup','quiz','flash','result','stats','settings'];
+  const screens = ['home','quiz-setup','quiz','flash','result','stats','settings','manual'];
   const tabbar = document.getElementById('tabbar');
   function showScreen(name){
     screens.forEach(s=>{
       const el = document.getElementById('screen-' + s);
       if(el) el.classList.toggle('hidden', s !== name);
     });
-    const isMainTab = ['home','quiz-setup','stats','settings'].includes(name);
+    const isMainTab = ['home','quiz-setup','stats','settings','manual'].includes(name);
     tabbar.classList.toggle('hidden', !isMainTab);
     [...tabbar.children].forEach(b=>{
       b.classList.toggle('active', b.dataset.screen === name);
