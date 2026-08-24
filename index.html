@@ -1339,13 +1339,15 @@ reluctant,気が進まない"></textarea>
       importError.classList.remove('hidden');
       return;
     }
+    const norm = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
     const byWord = {};
-    words.forEach(w => byWord[w.word.toLowerCase()] = w);
-    let updated = 0, notFound = 0, noSentence = 0;
+    words.forEach(w => byWord[norm(w.word)] = w);
+    let updated = 0, noSentence = 0;
+    const notFoundWords = [];
     parsed.forEach(item=>{
       if(!item || !item.word) return;
-      const target = byWord[String(item.word).toLowerCase()];
-      if(!target){ notFound++; return; }
+      const target = byWord[norm(item.word)];
+      if(!target){ notFoundWords.push(item.word); return; }
       const sentence = item.sentence || item.example_sentence || item.example || item.en || item.english || null;
       const translation = item.translation || item.ja || item.japanese || item.translation_ja || item.meaning_ja || item.jp || null;
       if(!sentence){ noSentence++; return; }
@@ -1355,13 +1357,13 @@ reluctant,気が進まない"></textarea>
     });
     saveWords();
     const notes = [];
-    if(notFound) notes.push(notFound + '語は単語一覧に見つかりませんでした');
+    if(notFoundWords.length) notes.push(notFoundWords.length + '語は単語一覧に見つかりませんでした（' + notFoundWords.slice(0,10).join('、') + (notFoundWords.length>10 ? ' 他' : '') + '）');
     if(noSentence) notes.push(noSentence + '語は例文の内容が空でした');
     importMsg.textContent = `${updated}語の例文を取り込みました${notes.length ? '（' + notes.join('、') + '）' : ''}。`;
     importMsg.classList.remove('hidden');
     importArea.value = '';
     renderSettings();
-    setTimeout(()=>importMsg.classList.add('hidden'), 4000);
+    setTimeout(()=>importMsg.classList.add('hidden'), 8000);
   });
 
   // ===== EXPORT / RESTORE =====
