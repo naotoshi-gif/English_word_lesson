@@ -271,6 +271,27 @@
   .tally .score{font-size:13px; color:var(--brass-deep); font-weight:600;}
   .prompt-kind{font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#1C93D1; margin-bottom:10px; font-weight:700;}
   .prompt-word{font-family:'Georgia',serif; font-size:32px; line-height:1.3; margin:0 0 24px 0; padding-bottom:20px; border-bottom:1px solid var(--line);}
+  .prompt-row{display:flex; align-items:flex-end; gap:12px; margin:0 0 24px 0; padding-bottom:20px; border-bottom:1px solid var(--line);}
+  .prompt-row .prompt-word{margin:0; padding:0; border:none; flex:1;}
+  .speak-btn{
+    flex-shrink:0;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid var(--input-border);
+    background:#fff;
+    color:#1C93D1;
+    font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .speak-btn:active{background:var(--paper-dim);}
+  .speak-btn.hidden{display:none;}
+  .example-sentence-row{display:flex; align-items:flex-start; gap:10px;}
+  .example-sentence-row .example-sentence{flex:1;}
+  .example-sentence-row .speak-btn{width:32px; height:32px; font-size:15px; margin-top:1px;}
+  .flash-word-row{display:flex; align-items:center; justify-content:center; gap:12px; margin:10px 0 30px;}
+  .flash-word-row .flash-word{margin:0;}
   .choices{display:flex; flex-direction:column; gap:9px;}
   .choice{text-align:left; background:#fff; border:1px solid var(--input-border); border-radius:2px; padding:13px 15px; font-size:14.5px; color:var(--ink); cursor:pointer; font-family:inherit; display:flex; gap:11px; align-items:flex-start;}
   .choice .mark{font-family:'Georgia',serif; color:#A9C5DA; font-size:13px; flex-shrink:0; padding-top:1px;}
@@ -431,7 +452,10 @@ reluctant,気が進まない"></textarea>
         <span class="score" id="qScore">正解 0</span>
       </div>
       <div class="prompt-kind" id="promptKind">この単語の意味は？</div>
-      <p class="prompt-word" id="promptWord"></p>
+      <div class="prompt-row">
+        <p class="prompt-word" id="promptWord"></p>
+        <button class="speak-btn hidden" id="promptSpeakBtn" aria-label="発音を再生">🔊</button>
+      </div>
       <div class="choices" id="choices"></div>
       <div class="feedback hidden" id="feedback"></div>
       <div class="example hidden" id="example"></div>
@@ -451,7 +475,10 @@ reluctant,気が進まない"></textarea>
       </div>
       <div class="flash-card">
         <div class="prompt-kind">この単語、わかりますか？</div>
-        <div class="flash-word" id="flashWord"></div>
+        <div class="flash-word-row">
+          <div class="flash-word" id="flashWord"></div>
+          <button class="speak-btn" id="flashSpeakBtn" aria-label="発音を再生">🔊</button>
+        </div>
         <div class="flash-reveal-area" id="flashRevealArea">
           <button class="btn btn-ghost" id="flashRevealBtn">答えを見る</button>
         </div>
@@ -599,6 +626,18 @@ reluctant,気が進まない"></textarea>
   }
 
   let words = [];
+
+  // ===== TEXT-TO-SPEECH =====
+  function speak(text){
+    if(!text || !('speechSynthesis' in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    } catch(err){ console.error('speech error', err); }
+  }
 
   function loadWords(){
     try{
@@ -1009,6 +1048,17 @@ reluctant,気が進まない"></textarea>
     document.getElementById('promptKind').textContent = cDirection === 'w2m' ? 'この単語の意味は？' : 'この意味を表す単語は？';
     document.getElementById('promptWord').textContent = q.prompt;
 
+    // 単語が実際に画面に表示されている（w2m方向）場合のみ発音を再生・再生ボタンを表示
+    const speakBtn = document.getElementById('promptSpeakBtn');
+    if(cDirection === 'w2m'){
+      speakBtn.classList.remove('hidden');
+      speakBtn.onclick = () => speak(q.wordObj.word);
+      speak(q.wordObj.word);
+    } else {
+      speakBtn.classList.add('hidden');
+      speakBtn.onclick = null;
+    }
+
     const marks = ['A','B','C','D'];
     const wrap = document.getElementById('choices');
     wrap.innerHTML = '';
@@ -1053,8 +1103,13 @@ reluctant,気が進まない"></textarea>
     if(wordObj.sentence){
       example.className = 'example';
       example.innerHTML = `<div class="example-label">例文</div>
-        <div class="example-sentence">${escapeHtml(wordObj.sentence)}</div>
+        <div class="example-sentence-row">
+          <div class="example-sentence">${escapeHtml(wordObj.sentence)}</div>
+          <button class="speak-btn" data-role="example-speak" aria-label="例文の発音を再生">🔊</button>
+        </div>
         <div class="example-translation">${escapeHtml(wordObj.translation || '')}</div>`;
+      const speakBtn = example.querySelector('[data-role="example-speak"]');
+      if(speakBtn) speakBtn.addEventListener('click', ()=> speak(wordObj.sentence));
     } else {
       example.className = 'example';
       example.innerHTML = `<div class="example-label">例文</div><div class="example-error">この単語の例文はまだ登録されていません。設定タブの「例文の取り込み」から追加できます。</div>`;
@@ -1091,6 +1146,9 @@ reluctant,気が進まない"></textarea>
     document.getElementById('fCount').textContent = `${fIndex+1} / ${fWords.length}`;
     document.getElementById('fScore').textContent = `わかった ${fScore}`;
     document.getElementById('flashWord').textContent = w.word;
+    const flashSpeakBtn = document.getElementById('flashSpeakBtn');
+    flashSpeakBtn.onclick = () => speak(w.word);
+    speak(w.word);
     document.getElementById('flashExample').classList.add('hidden');
     document.getElementById('flashJudgeBtns').classList.add('hidden');
     const revealArea = document.getElementById('flashRevealArea');
